@@ -106,7 +106,7 @@ function ScoresPage() {
             </thead>
             <tbody>
               {roster.map((st) => {
-                const d = draft[st.id];
+                const d = draft[st.id] ?? { ca1: 0, ca2: 0, assignment: 0, exam: 0 };
                 const total = d.ca1 + d.ca2 + d.assignment + d.exam;
                 const g = gradeFor(total);
                 return (
