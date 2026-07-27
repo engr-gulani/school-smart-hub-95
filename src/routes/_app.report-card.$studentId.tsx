@@ -1,9 +1,10 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, notFound } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Printer, Sparkles } from "lucide-react";
 import {
   CLASSES,
+  PUBLISHED_CLASS_IDS,
   SCHOOL,
   SCORES,
   STUDENTS,
@@ -13,6 +14,7 @@ import {
   ordinal,
   scoreTotals,
 } from "@/lib/mock-data";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_app/report-card/$studentId")({
   head: ({ params }) => {
@@ -34,17 +36,28 @@ export const Route = createFileRoute("/_app/report-card/$studentId")({
 
 function ReportCard() {
   const { studentId } = Route.useLoaderData();
+  const { user } = useAuth();
   const student = STUDENTS.find((s) => s.id === studentId)!;
+
+  // Students may only view their own report card, and only once published.
+  if (user.role === "student") {
+    if (user.studentId !== student.id) return <Navigate to="/my-results" />;
+    if (!PUBLISHED_CLASS_IDS.includes(student.classId)) return <Navigate to="/my-results" />;
+  }
+
   const cls = CLASSES.find((c) => c.id === student.classId)!;
   const { rows } = classBroadsheet(student.classId);
   const myRow = rows.find((r) => r.student.id === student.id)!;
   const classSubjects = SUBJECTS.filter((s) => s.classId === student.classId);
+  const backTo = user.role === "student" ? "/my-results" : "/results";
+
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between print:hidden">
-        <Link to="/results">
+        <Link to={backTo}>
           <Button variant="ghost" size="sm" className="gap-1"><ArrowLeft className="h-4 w-4" /> Back</Button>
+
         </Link>
         <Button size="sm" className="gap-2" onClick={() => window.print()}>
           <Printer className="h-4 w-4" /> Print / PDF
