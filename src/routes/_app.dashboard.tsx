@@ -8,19 +8,28 @@ import {
   FileCheck2,
   Bell,
   TrendingUp,
+  CalendarCheck2,
+  FileText,
+  Award,
 } from "lucide-react";
 import { StatCard } from "@/components/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import {
   CLASSES,
+  NOTIFICATIONS,
+  PUBLISHED_CLASS_IDS,
   SCHOOL,
   STUDENTS,
   SUBJECTS,
   USERS,
   SCORES,
+  attendanceFor,
   classBroadsheet,
+  gradeFor,
+  ordinal,
 } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -35,6 +44,9 @@ export const Route = createFileRoute("/_app/dashboard")({
 
 function Dashboard() {
   const { user } = useAuth();
+
+  if (user.role === "student") return <StudentDashboard />;
+
   const teacherCount = USERS.filter((u) => u.role === "subject_teacher" || u.role === "class_teacher").length;
   const isTeacherView = user.role === "subject_teacher" || user.role === "class_teacher";
 
@@ -45,6 +57,7 @@ function Dashboard() {
   const studentsInScope = isTeacherView
     ? STUDENTS.filter((st) => assignedSubjects.some((sub) => sub.classId === st.classId))
     : STUDENTS;
+
 
   return (
     <div className="space-y-6">
