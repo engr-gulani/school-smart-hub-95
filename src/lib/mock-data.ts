@@ -20,7 +20,7 @@ export interface User {
 export interface ClassLevel {
   id: string;
   name: string;
-  level: "JSS" | "SS";
+  level: "Nursery" | "Primary" | "JSS" | "SS";
   classTeacherId?: string;
 }
 
@@ -47,11 +47,10 @@ export interface Student {
 export interface Score {
   studentId: string;
   subjectId: string;
-  ca1: number;
-  ca2: number;
-  assignment: number;
-  practical: number;
-  exam: number;
+  ca1: number;        // max 20
+  ca2: number;        // max 10
+  assignment: number; // max 10
+  exam: number;       // max 60
 }
 
 export const SCHOOL = {
