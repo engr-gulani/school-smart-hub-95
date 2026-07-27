@@ -51,11 +51,61 @@ function ResultsPage() {
           </Select>
           <Button variant="outline" size="sm" className="gap-2"><Download className="h-4 w-4" /> Export</Button>
           <Button variant="outline" size="sm" className="gap-2"><Printer className="h-4 w-4" /> Print</Button>
-          {can(user.role, "publish_results") && (
-            <Button size="sm" className="gap-2"><FileCheck2 className="h-4 w-4" /> Publish results</Button>
-          )}
         </div>
       </div>
+
+      <Card className="shadow-card border-primary/20">
+        <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
+          <div className="flex flex-1 items-center gap-4">
+            <div className="flex items-center gap-2">
+              {STAGE_ORDER.map((s, i) => {
+                const reached = STAGE_ORDER.indexOf(stage) >= i;
+                return (
+                  <div key={s} className="flex items-center gap-2">
+                    {reached ? (
+                      <CheckCircle2 className="text-primary h-4 w-4" />
+                    ) : (
+                      <Circle className="text-muted-foreground/50 h-4 w-4" />
+                    )}
+                    {i < STAGE_ORDER.length - 1 && (
+                      <span className={`h-px w-6 ${reached ? "bg-primary" : "bg-border"}`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <div>
+              <p className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">
+                Approval workflow
+              </p>
+              <p className="text-sm font-medium">{STAGE_LABEL[stage]}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {stage === "draft" && can(user.role, "enter_scores") && (
+              <Button size="sm" onClick={() => setStage("vp_review")}>Submit for approval</Button>
+            )}
+            {stage === "vp_review" && can(user.role, "vp_approve") && (
+              <Button size="sm" onClick={() => setStage("principal_review")} className="gap-2">
+                <FileCheck2 className="h-4 w-4" /> VP approve
+              </Button>
+            )}
+            {stage === "principal_review" && can(user.role, "principal_approve") && (
+              <Button size="sm" onClick={() => setStage("approved")} className="gap-2">
+                <FileCheck2 className="h-4 w-4" /> Principal approve
+              </Button>
+            )}
+            {stage === "approved" && can(user.role, "publish_results") && (
+              <Button size="sm" onClick={() => setStage("published")} className="gap-2">
+                <FileCheck2 className="h-4 w-4" /> Publish results
+              </Button>
+            )}
+            {stage === "published" && (
+              <Badge className="bg-success/15 text-success border-success/30">Published</Badge>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="shadow-card"><CardContent className="p-5">
