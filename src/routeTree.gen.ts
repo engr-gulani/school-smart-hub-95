@@ -17,6 +17,9 @@ import { Route as AppStudentsRouteImport } from './routes/_app.students'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppScoresRouteImport } from './routes/_app.scores'
 import { Route as AppResultsRouteImport } from './routes/_app.results'
+import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
+import { Route as AppMyResultsRouteImport } from './routes/_app.my-results'
+import { Route as AppMyProfileRouteImport } from './routes/_app.my-profile'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClassesRouteImport } from './routes/_app.classes'
 import { Route as AppReportCardStudentIdRouteImport } from './routes/_app.report-card.$studentId'
@@ -60,6 +63,21 @@ const AppResultsRoute = AppResultsRouteImport.update({
   path: '/results',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyResultsRoute = AppMyResultsRouteImport.update({
+  id: '/my-results',
+  path: '/my-results',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyProfileRoute = AppMyProfileRouteImport.update({
+  id: '/my-profile',
+  path: '/my-profile',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -80,6 +98,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/classes': typeof AppClassesRoute
   '/dashboard': typeof AppDashboardRoute
+  '/my-profile': typeof AppMyProfileRoute
+  '/my-results': typeof AppMyResultsRoute
+  '/notifications': typeof AppNotificationsRoute
   '/results': typeof AppResultsRoute
   '/scores': typeof AppScoresRoute
   '/settings': typeof AppSettingsRoute
@@ -92,6 +113,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/classes': typeof AppClassesRoute
   '/dashboard': typeof AppDashboardRoute
+  '/my-profile': typeof AppMyProfileRoute
+  '/my-results': typeof AppMyResultsRoute
+  '/notifications': typeof AppNotificationsRoute
   '/results': typeof AppResultsRoute
   '/scores': typeof AppScoresRoute
   '/settings': typeof AppSettingsRoute
@@ -106,6 +130,9 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_app/classes': typeof AppClassesRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/my-profile': typeof AppMyProfileRoute
+  '/_app/my-results': typeof AppMyResultsRoute
+  '/_app/notifications': typeof AppNotificationsRoute
   '/_app/results': typeof AppResultsRoute
   '/_app/scores': typeof AppScoresRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -120,6 +147,9 @@ export interface FileRouteTypes {
     | '/'
     | '/classes'
     | '/dashboard'
+    | '/my-profile'
+    | '/my-results'
+    | '/notifications'
     | '/results'
     | '/scores'
     | '/settings'
@@ -132,6 +162,9 @@ export interface FileRouteTypes {
     | '/'
     | '/classes'
     | '/dashboard'
+    | '/my-profile'
+    | '/my-results'
+    | '/notifications'
     | '/results'
     | '/scores'
     | '/settings'
@@ -145,6 +178,9 @@ export interface FileRouteTypes {
     | '/_app'
     | '/_app/classes'
     | '/_app/dashboard'
+    | '/_app/my-profile'
+    | '/_app/my-results'
+    | '/_app/notifications'
     | '/_app/results'
     | '/_app/scores'
     | '/_app/settings'
@@ -217,6 +253,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppResultsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-results': {
+      id: '/_app/my-results'
+      path: '/my-results'
+      fullPath: '/my-results'
+      preLoaderRoute: typeof AppMyResultsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-profile': {
+      id: '/_app/my-profile'
+      path: '/my-profile'
+      fullPath: '/my-profile'
+      preLoaderRoute: typeof AppMyProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -244,6 +301,9 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppClassesRoute: typeof AppClassesRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppMyProfileRoute: typeof AppMyProfileRoute
+  AppMyResultsRoute: typeof AppMyResultsRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppResultsRoute: typeof AppResultsRoute
   AppScoresRoute: typeof AppScoresRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -256,6 +316,9 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppClassesRoute: AppClassesRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppMyProfileRoute: AppMyProfileRoute,
+  AppMyResultsRoute: AppMyResultsRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppResultsRoute: AppResultsRoute,
   AppScoresRoute: AppScoresRoute,
   AppSettingsRoute: AppSettingsRoute,
