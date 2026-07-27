@@ -47,6 +47,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   vp_academic: "Vice Principal (Academic)",
   class_teacher: "Class Teacher",
   subject_teacher: "Subject Teacher",
+  student: "Student",
 };
 
 export type Action =
@@ -59,7 +60,8 @@ export type Action =
   | "vp_approve"
   | "principal_approve"
   | "enter_scores"
-  | "view_broadsheet";
+  | "view_broadsheet"
+  | "view_own_results";
 
 export function can(role: Role, action: Action): boolean {
   const isAdmin = role === "school_admin" || role === "super_admin";
@@ -81,6 +83,9 @@ export function can(role: Role, action: Action): boolean {
     case "enter_scores":
       return role === "subject_teacher";
     case "view_broadsheet":
-      return role !== "subject_teacher";
+      return role !== "subject_teacher" && role !== "student";
+    case "view_own_results":
+      return role === "student";
   }
 }
+
