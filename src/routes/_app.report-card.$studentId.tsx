@@ -49,7 +49,7 @@ function ReportCard() {
   const { rows } = classBroadsheet(student.classId);
   const myRow = rows.find((r) => r.student.id === student.id)!;
   const classSubjects = SUBJECTS.filter((s) => s.classId === student.classId);
-  const backTo = user.role === "student" ? "/my-results" : "/results";
+  
 
 
   return (
