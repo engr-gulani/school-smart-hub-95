@@ -55,10 +55,16 @@ function ReportCard() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between print:hidden">
-        <Link to={backTo}>
-          <Button variant="ghost" size="sm" className="gap-1"><ArrowLeft className="h-4 w-4" /> Back</Button>
+        {user.role === "student" ? (
+          <Link to="/my-results">
+            <Button variant="ghost" size="sm" className="gap-1"><ArrowLeft className="h-4 w-4" /> Back</Button>
+          </Link>
+        ) : (
+          <Link to="/results">
+            <Button variant="ghost" size="sm" className="gap-1"><ArrowLeft className="h-4 w-4" /> Back</Button>
+          </Link>
+        )}
 
-        </Link>
         <Button size="sm" className="gap-2" onClick={() => window.print()}>
           <Printer className="h-4 w-4" /> Print / PDF
         </Button>
