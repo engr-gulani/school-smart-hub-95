@@ -183,3 +183,141 @@ function SnapshotBroadsheet() {
     </div>
   );
 }
+
+function StudentDashboard() {
+  const { user } = useAuth();
+  const student = STUDENTS.find((s) => s.id === user.studentId);
+  if (!student) {
+    return (
+      <div className="py-16 text-center text-sm text-muted-foreground">
+        No student record linked to this account. Please contact the administrator.
+      </div>
+    );
+  }
+  const cls = CLASSES.find((c) => c.id === student.classId)!;
+  const attendance = attendanceFor(student.id);
+  const published = PUBLISHED_CLASS_IDS.includes(cls.id);
+  const { rows } = classBroadsheet(cls.id);
+  const myRow = rows.find((r) => r.student.id === student.id);
+  const classSubjects = SUBJECTS.filter((s) => s.classId === cls.id);
+  const recentNotifications = NOTIFICATIONS.filter(
+    (n) => !n.scope || n.scope === "all" || (n.scope === "class" && n.classId === cls.id) || n.scope === "student",
+  ).slice(0, 4);
+  const initials = student.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
+  const attendancePct = Math.round((attendance.present / attendance.total) * 100);
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
+          {SCHOOL.session} · {SCHOOL.term}
+        </p>
+        <h1 className="font-display text-3xl font-semibold">Welcome back, {student.name.split(" ")[0]}.</h1>
+        <p className="text-muted-foreground text-sm">Here's your personalized student portal.</p>
+      </div>
+
+      <Card className="shadow-card">
+        <CardContent className="flex flex-wrap items-center gap-5 p-5">
+          <div className="bg-gradient-primary text-primary-foreground flex h-16 w-16 items-center justify-center rounded-full text-xl font-semibold">
+            {initials}
+          </div>
+          <div className="flex-1">
+            <p className="font-display text-lg font-semibold">{student.name}</p>
+            <p className="text-muted-foreground text-sm">{cls.name} · {student.gender}</p>
+            <p className="text-muted-foreground font-mono text-xs">{student.admissionNo}</p>
+          </div>
+          <Badge variant="secondary" className="w-fit">
+            Next term begins {SCHOOL.nextTermBegins}
+          </Badge>
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Attendance" value={`${attendancePct}%`} hint={`${attendance.present}/${attendance.total} days`} icon={CalendarCheck2} accent="success" />
+        <StatCard label="Overall average" value={published && myRow ? myRow.average.toFixed(1) : "—"} icon={TrendingUp} />
+        <StatCard label="Class position" value={published && myRow ? ordinal(myRow.position) : "—"} icon={Award} accent="warning" />
+        <StatCard label="Subjects" value={classSubjects.length} icon={BookOpen} accent="muted" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-3">
+        <Card className="shadow-card lg:col-span-2">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-base">Latest results</CardTitle>
+              <p className="text-muted-foreground mt-1 text-xs">
+                {published ? "Published · First Term" : "Awaiting publication by the Principal"}
+              </p>
+            </div>
+            {published && (
+              <Link to="/report-card/$studentId" params={{ studentId: student.id }}>
+                <Button size="sm" variant="outline" className="gap-2">
+                  <FileText className="h-4 w-4" /> Report card
+                </Button>
+              </Link>
+            )}
+          </CardHeader>
+          <CardContent>
+            {published && myRow ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-muted-foreground border-b text-left text-xs uppercase tracking-wide">
+                      <th className="py-2 font-medium">Subject</th>
+                      <th className="py-2 text-right font-medium">Total</th>
+                      <th className="py-2 text-right font-medium">Grade</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {myRow.perSubject.map((p) => {
+                      const sub = classSubjects.find((s) => s.id === p.subjectId);
+                      const g = gradeFor(p.total);
+                      return (
+                        <tr key={p.subjectId} className="border-b last:border-0">
+                          <td className="py-2 font-medium">{sub?.name}</td>
+                          <td className="text-primary py-2 text-right font-semibold tabular-nums">{p.total}</td>
+                          <td className="py-2 text-right">
+                            <Badge variant={g.grade === "F" ? "destructive" : "secondary"}>{g.grade}</Badge>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-muted-foreground py-8 text-center text-sm">
+                Your results for this term have not been published yet.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Bell className="h-4 w-4" /> Recent notifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            {recentNotifications.map((n) => (
+              <div key={n.id} className="flex items-start gap-3">
+                <div className="bg-accent text-accent-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+                  <Bell className="h-4 w-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-foreground font-medium">{n.title}</p>
+                  <p className="text-muted-foreground truncate text-xs">{n.body}</p>
+                  <p className="text-muted-foreground text-[11px]">{n.when}</p>
+                </div>
+              </div>
+            ))}
+            <Link to="/notifications" className="text-primary block pt-1 text-xs font-medium hover:underline">
+              View all notifications →
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
