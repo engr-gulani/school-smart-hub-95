@@ -75,7 +75,46 @@ export const USERS: User[] = [
   { id: "u4", name: "Mr. John Bello", email: "john@greenfield.edu.ng", role: "subject_teacher", staffId: "STF-021", subjectIds: ["s-math-ss1a", "s-math-ss1b"] },
   { id: "u5", name: "Mr. Musa Idris", email: "musa@greenfield.edu.ng", role: "subject_teacher", staffId: "STF-030", subjectIds: ["s-phy-ss1a"] },
   { id: "u6", name: "Root", email: "root@lovable.dev", role: "super_admin" },
+  // Student accounts — linked to STUDENTS rows below. Admission # is the login username.
+  { id: "u-st-1", name: "Chinelo Adeyemi", email: "chinelo@student.greenfield.edu.ng", role: "student", studentId: "st-1" },
+  { id: "u-st-2", name: "Emeka Balogun", email: "emeka@student.greenfield.edu.ng", role: "student", studentId: "st-2" },
 ];
+
+// Classes whose results the Principal has published — students can only see these.
+export const PUBLISHED_CLASS_IDS: string[] = ["c-ss1a"];
+
+export interface Notification {
+  id: string;
+  title: string;
+  body: string;
+  when: string;
+  kind: "result" | "term" | "announcement" | "password" | "attendance";
+  scope?: "all" | "class" | "student";
+  classId?: string;
+  studentId?: string;
+}
+
+export const NOTIFICATIONS: Notification[] = [
+  { id: "n1", title: "First term results published", body: "Your First Term 2025/2026 results are now available. Download your report card from My Results.", when: "2h ago", kind: "result", scope: "class", classId: "c-ss1a" },
+  { id: "n2", title: "Mid-term break", body: "School resumes on Monday, November 3rd. Enjoy the break!", when: "Yesterday", kind: "announcement", scope: "all" },
+  { id: "n3", title: "New academic term", body: "Second Term begins Jan 8, 2026. Please settle school fees before resumption.", when: "3d ago", kind: "term", scope: "all" },
+  { id: "n4", title: "Password changed", body: "Your account password was updated successfully.", when: "1w ago", kind: "password", scope: "student" },
+  { id: "n5", title: "Inter-house sports", body: "Athletics preliminaries begin next Friday. Speak to your class teacher to register.", when: "1w ago", kind: "announcement", scope: "all" },
+];
+
+export interface AttendanceSummary {
+  present: number;
+  absent: number;
+  total: number;
+}
+
+export function attendanceFor(studentId: string): AttendanceSummary {
+  const seed = studentId.length + (studentId.charCodeAt(studentId.length - 1) % 5);
+  const total = 60;
+  const absent = 2 + (seed % 4);
+  return { present: total - absent, absent, total };
+}
+
 
 export const CLASSES: ClassLevel[] = [
   { id: "c-nur1", name: "Nursery 1", level: "Nursery" },
