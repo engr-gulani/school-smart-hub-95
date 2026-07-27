@@ -68,6 +68,7 @@ export const SCHOOL = {
 export const USERS: User[] = [
   { id: "u1", name: "Dr. Ada Obi", email: "admin@greenfield.edu.ng", role: "school_admin" },
   { id: "u2", name: "Mr. Samuel Okoro", email: "principal@greenfield.edu.ng", role: "principal" },
+  { id: "u7", name: "Mrs. Nkechi Umeh", email: "vp.academic@greenfield.edu.ng", role: "vp_academic", staffId: "STF-002" },
   { id: "u3", name: "Mrs. Grace Adewale", email: "grace@greenfield.edu.ng", role: "class_teacher", staffId: "STF-014", classIds: ["c-ss1a"] },
   { id: "u4", name: "Mr. John Bello", email: "john@greenfield.edu.ng", role: "subject_teacher", staffId: "STF-021", subjectIds: ["s-math-ss1a", "s-math-ss1b"] },
   { id: "u5", name: "Mr. Musa Idris", email: "musa@greenfield.edu.ng", role: "subject_teacher", staffId: "STF-030", subjectIds: ["s-phy-ss1a"] },
@@ -75,11 +76,18 @@ export const USERS: User[] = [
 ];
 
 export const CLASSES: ClassLevel[] = [
+  { id: "c-nur1", name: "Nursery 1", level: "Nursery" },
+  { id: "c-nur2", name: "Nursery 2", level: "Nursery" },
+  { id: "c-pri1", name: "Primary 1", level: "Primary" },
+  { id: "c-pri3", name: "Primary 3", level: "Primary" },
+  { id: "c-pri6", name: "Primary 6", level: "Primary" },
   { id: "c-jss1a", name: "JSS 1A", level: "JSS" },
   { id: "c-jss2a", name: "JSS 2A", level: "JSS" },
+  { id: "c-jss3a", name: "JSS 3A", level: "JSS" },
   { id: "c-ss1a", name: "SS 1A", level: "SS", classTeacherId: "u3" },
   { id: "c-ss1b", name: "SS 1B", level: "SS" },
   { id: "c-ss2a", name: "SS 2A", level: "SS" },
+  { id: "c-ss3a", name: "SS 3A", level: "SS" },
 ];
 
 export const SUBJECTS: Subject[] = [
