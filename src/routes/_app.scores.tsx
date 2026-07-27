@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
@@ -38,7 +38,7 @@ function ScoresPage() {
   });
 
   // Recompute draft when subject changes
-  useMemo(() => {
+  useEffect(() => {
     const map: Record<string, any> = {};
     for (const st of roster) {
       const sc = SCORES.find((x) => x.studentId === st.id && x.subjectId === subject?.id);
@@ -106,7 +106,7 @@ function ScoresPage() {
             </thead>
             <tbody>
               {roster.map((st) => {
-                const d = draft[st.id];
+                const d = draft[st.id] ?? { ca1: 0, ca2: 0, assignment: 0, exam: 0 };
                 const total = d.ca1 + d.ca2 + d.assignment + d.exam;
                 const g = gradeFor(total);
                 return (
