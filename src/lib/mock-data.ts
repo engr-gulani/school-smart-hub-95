@@ -138,11 +138,10 @@ function seedScores(): Score[] {
       out.push({
         studentId: st.id,
         subjectId: sub.id,
-        ca1: 8 + (seed % 8),
-        ca2: 10 + ((seed * 3) % 6),
-        assignment: 4 + (seed % 3),
-        practical: 6 + ((seed * 2) % 5),
-        exam: 40 + ((seed * 7) % 25),
+        ca1: 12 + (seed % 8),        // 12–19 / 20
+        ca2: 4 + ((seed * 3) % 6),   // 4–9 / 10
+        assignment: 4 + (seed % 6),  // 4–9 / 10
+        exam: 35 + ((seed * 7) % 25),// 35–59 / 60
       });
     }
   }
