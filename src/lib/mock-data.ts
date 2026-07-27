@@ -2,6 +2,7 @@ export type Role =
   | "super_admin"
   | "school_admin"
   | "principal"
+  | "vp_academic"
   | "class_teacher"
   | "subject_teacher";
 
