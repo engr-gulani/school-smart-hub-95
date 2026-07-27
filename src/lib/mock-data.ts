@@ -171,7 +171,7 @@ export function gradeFor(total: number): GradeBand {
 }
 
 export function scoreTotals(s: Score) {
-  const caTotal = s.ca1 + s.ca2 + s.assignment + s.practical;
+  const caTotal = s.ca1 + s.ca2 + s.assignment;
   const total = caTotal + s.exam;
   return { caTotal, total };
 }
