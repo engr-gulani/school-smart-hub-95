@@ -10,6 +10,9 @@ import {
   Settings,
   LogOut,
   Sparkles,
+  User as UserIcon,
+  FileText,
+  Bell,
 } from "lucide-react";
 import {
   Sidebar,
@@ -37,23 +40,34 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, logout } = useAuth();
   const role = user.role;
+  const isStudent = role === "student";
 
-  const main: NavItem[] = [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, show: true },
-    { title: "Students", url: "/students", icon: Users, show: true },
-    { title: "Teachers", url: "/teachers", icon: GraduationCap, show: can(role, "manage_teachers") },
-    { title: "Classes", url: "/classes", icon: School, show: can(role, "manage_classes") },
-    { title: "Subjects", url: "/subjects", icon: BookOpen, show: true },
-  ];
+  const main: NavItem[] = isStudent
+    ? [
+        { title: "My Dashboard", url: "/dashboard", icon: LayoutDashboard, show: true },
+        { title: "My Results", url: "/my-results", icon: FileText, show: true },
+        { title: "Notifications", url: "/notifications", icon: Bell, show: true },
+        { title: "My Profile", url: "/my-profile", icon: UserIcon, show: true },
+      ]
+    : [
+        { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, show: true },
+        { title: "Students", url: "/students", icon: Users, show: true },
+        { title: "Teachers", url: "/teachers", icon: GraduationCap, show: can(role, "manage_teachers") },
+        { title: "Classes", url: "/classes", icon: School, show: can(role, "manage_classes") },
+        { title: "Subjects", url: "/subjects", icon: BookOpen, show: true },
+      ];
 
-  const academic: NavItem[] = [
-    { title: "Score Entry", url: "/scores", icon: ClipboardEdit, show: can(role, "enter_scores") },
-    { title: "Results & Broadsheet", url: "/results", icon: FileCheck2, show: can(role, "view_broadsheet") },
-  ];
+  const academic: NavItem[] = isStudent
+    ? []
+    : [
+        { title: "Score Entry", url: "/scores", icon: ClipboardEdit, show: can(role, "enter_scores") },
+        { title: "Results & Broadsheet", url: "/results", icon: FileCheck2, show: can(role, "view_broadsheet") },
+      ];
 
-  const admin: NavItem[] = [
-    { title: "School Settings", url: "/settings", icon: Settings, show: can(role, "manage_school") },
-  ];
+  const admin: NavItem[] = isStudent
+    ? []
+    : [{ title: "School Settings", url: "/settings", icon: Settings, show: can(role, "manage_school") }];
+
 
   const isActive = (u: string) => pathname === u || pathname.startsWith(u + "/");
 
