@@ -4,7 +4,8 @@ export type Role =
   | "principal"
   | "vp_academic"
   | "class_teacher"
-  | "subject_teacher";
+  | "subject_teacher"
+  | "student";
 
 export interface User {
   id: string;
@@ -15,6 +16,7 @@ export interface User {
   staffId?: string;
   subjectIds?: string[]; // for subject teachers
   classIds?: string[]; // classes taught / class teacher
+  studentId?: string; // for student accounts — links to STUDENTS row
 }
 
 export interface ClassLevel {
