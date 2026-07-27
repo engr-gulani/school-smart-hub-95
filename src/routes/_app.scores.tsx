@@ -28,11 +28,11 @@ function ScoresPage() {
     [subject?.classId],
   );
 
-  const [draft, setDraft] = useState<Record<string, { ca1: number; ca2: number; assignment: number; practical: number; exam: number }>>(() => {
+  const [draft, setDraft] = useState<Record<string, { ca1: number; ca2: number; assignment: number; exam: number }>>(() => {
     const map: Record<string, any> = {};
     for (const st of roster) {
       const sc = SCORES.find((x) => x.studentId === st.id && x.subjectId === subject?.id);
-      map[st.id] = sc ? { ca1: sc.ca1, ca2: sc.ca2, assignment: sc.assignment, practical: sc.practical, exam: sc.exam } : { ca1: 0, ca2: 0, assignment: 0, practical: 0, exam: 0 };
+      map[st.id] = sc ? { ca1: sc.ca1, ca2: sc.ca2, assignment: sc.assignment, exam: sc.exam } : { ca1: 0, ca2: 0, assignment: 0, exam: 0 };
     }
     return map;
   });
@@ -42,13 +42,15 @@ function ScoresPage() {
     const map: Record<string, any> = {};
     for (const st of roster) {
       const sc = SCORES.find((x) => x.studentId === st.id && x.subjectId === subject?.id);
-      map[st.id] = sc ? { ca1: sc.ca1, ca2: sc.ca2, assignment: sc.assignment, practical: sc.practical, exam: sc.exam } : { ca1: 0, ca2: 0, assignment: 0, practical: 0, exam: 0 };
+      map[st.id] = sc ? { ca1: sc.ca1, ca2: sc.ca2, assignment: sc.assignment, exam: sc.exam } : { ca1: 0, ca2: 0, assignment: 0, exam: 0 };
     }
     setDraft(map);
   }, [subjectId]); // eslint-disable-line
 
+  const MAX: Record<string, number> = { ca1: 20, ca2: 10, assignment: 10, exam: 60 };
   const update = (studentId: string, key: string, val: number) => {
-    setDraft((d) => ({ ...d, [studentId]: { ...d[studentId], [key]: Math.max(0, Math.min(100, val || 0)) } }));
+    const max = MAX[key] ?? 100;
+    setDraft((d) => ({ ...d, [studentId]: { ...d[studentId], [key]: Math.max(0, Math.min(max, val || 0)) } }));
   };
 
   if (!subject) {
@@ -76,7 +78,7 @@ function ScoresPage() {
           <div>
             <CardTitle className="text-base">{subject.name} — {classInfo?.name}</CardTitle>
             <p className="text-muted-foreground mt-1 text-xs">
-              CA1 (max 20) · CA2 (max 20) · Assignment (max 10) · Practical (max 10) · Exam (max 60) · Total 100
+              CA1 (max 20) · CA2 (max 10) · Assignment (max 10) · Exam (max 60) · Total 100
             </p>
           </div>
           <Select value={subjectId} onValueChange={setSubjectId}>
@@ -94,11 +96,10 @@ function ScoresPage() {
             <thead>
               <tr className="text-muted-foreground border-b text-left text-xs uppercase tracking-wide">
                 <th className="py-2 pr-3 font-medium">Student</th>
-                <th className="py-2 pr-3 font-medium">CA1</th>
-                <th className="py-2 pr-3 font-medium">CA2</th>
-                <th className="py-2 pr-3 font-medium">Assign.</th>
-                <th className="py-2 pr-3 font-medium">Practical</th>
-                <th className="py-2 pr-3 font-medium">Exam</th>
+                <th className="py-2 pr-3 font-medium">CA1 /20</th>
+                <th className="py-2 pr-3 font-medium">CA2 /10</th>
+                <th className="py-2 pr-3 font-medium">Assign. /10</th>
+                <th className="py-2 pr-3 font-medium">Exam /60</th>
                 <th className="py-2 pr-3 text-right font-medium">Total</th>
                 <th className="py-2 text-right font-medium">Grade</th>
               </tr>
@@ -106,7 +107,7 @@ function ScoresPage() {
             <tbody>
               {roster.map((st) => {
                 const d = draft[st.id];
-                const total = d.ca1 + d.ca2 + d.assignment + d.practical + d.exam;
+                const total = d.ca1 + d.ca2 + d.assignment + d.exam;
                 const g = gradeFor(total);
                 return (
                   <tr key={st.id} className="border-b last:border-0">
@@ -114,12 +115,12 @@ function ScoresPage() {
                       <p className="font-medium">{st.name}</p>
                       <p className="text-muted-foreground font-mono text-[11px]">{st.admissionNo}</p>
                     </td>
-                    {(["ca1", "ca2", "assignment", "practical", "exam"] as const).map((k) => (
+                    {(["ca1", "ca2", "assignment", "exam"] as const).map((k) => (
                       <td key={k} className="py-2 pr-3">
                         <Input
                           type="number"
                           min={0}
-                          max={100}
+                          max={MAX[k]}
                           value={d[k]}
                           onChange={(e) => update(st.id, k, Number(e.target.value))}
                           className="h-8 w-16 tabular-nums"

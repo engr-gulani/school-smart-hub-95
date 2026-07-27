@@ -44,32 +44,42 @@ export const ROLE_LABEL: Record<Role, string> = {
   super_admin: "Super Administrator",
   school_admin: "School Administrator",
   principal: "Principal",
+  vp_academic: "Vice Principal (Academic)",
   class_teacher: "Class Teacher",
   subject_teacher: "Subject Teacher",
 };
 
-export function can(role: Role, action:
+export type Action =
   | "manage_school"
   | "manage_students"
   | "manage_teachers"
   | "manage_classes"
+  | "assign_subjects"
   | "publish_results"
-  | "approve_results"
+  | "vp_approve"
+  | "principal_approve"
   | "enter_scores"
-  | "view_broadsheet"
-): boolean {
+  | "view_broadsheet";
+
+export function can(role: Role, action: Action): boolean {
+  const isAdmin = role === "school_admin" || role === "super_admin";
   switch (action) {
     case "manage_school":
-    case "manage_students":
     case "manage_teachers":
     case "manage_classes":
-      return role === "school_admin" || role === "super_admin";
+      return isAdmin;
+    case "manage_students":
+      return isAdmin || role === "class_teacher";
+    case "assign_subjects":
+      return isAdmin || role === "vp_academic";
     case "publish_results":
-      return role === "school_admin" || role === "super_admin";
-    case "approve_results":
-      return ["principal", "class_teacher", "school_admin", "super_admin"].includes(role);
+      return isAdmin;
+    case "vp_approve":
+      return isAdmin || role === "vp_academic";
+    case "principal_approve":
+      return isAdmin || role === "principal";
     case "enter_scores":
-      return ["subject_teacher", "class_teacher"].includes(role);
+      return role === "subject_teacher";
     case "view_broadsheet":
       return role !== "subject_teacher";
   }

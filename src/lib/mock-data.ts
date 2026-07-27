@@ -2,6 +2,7 @@ export type Role =
   | "super_admin"
   | "school_admin"
   | "principal"
+  | "vp_academic"
   | "class_teacher"
   | "subject_teacher";
 
@@ -19,7 +20,7 @@ export interface User {
 export interface ClassLevel {
   id: string;
   name: string;
-  level: "JSS" | "SS";
+  level: "Nursery" | "Primary" | "JSS" | "SS";
   classTeacherId?: string;
 }
 
@@ -46,11 +47,10 @@ export interface Student {
 export interface Score {
   studentId: string;
   subjectId: string;
-  ca1: number;
-  ca2: number;
-  assignment: number;
-  practical: number;
-  exam: number;
+  ca1: number;        // max 20
+  ca2: number;        // max 10
+  assignment: number; // max 10
+  exam: number;       // max 60
 }
 
 export const SCHOOL = {
@@ -68,6 +68,7 @@ export const SCHOOL = {
 export const USERS: User[] = [
   { id: "u1", name: "Dr. Ada Obi", email: "admin@greenfield.edu.ng", role: "school_admin" },
   { id: "u2", name: "Mr. Samuel Okoro", email: "principal@greenfield.edu.ng", role: "principal" },
+  { id: "u7", name: "Mrs. Nkechi Umeh", email: "vp.academic@greenfield.edu.ng", role: "vp_academic", staffId: "STF-002" },
   { id: "u3", name: "Mrs. Grace Adewale", email: "grace@greenfield.edu.ng", role: "class_teacher", staffId: "STF-014", classIds: ["c-ss1a"] },
   { id: "u4", name: "Mr. John Bello", email: "john@greenfield.edu.ng", role: "subject_teacher", staffId: "STF-021", subjectIds: ["s-math-ss1a", "s-math-ss1b"] },
   { id: "u5", name: "Mr. Musa Idris", email: "musa@greenfield.edu.ng", role: "subject_teacher", staffId: "STF-030", subjectIds: ["s-phy-ss1a"] },
@@ -75,11 +76,18 @@ export const USERS: User[] = [
 ];
 
 export const CLASSES: ClassLevel[] = [
+  { id: "c-nur1", name: "Nursery 1", level: "Nursery" },
+  { id: "c-nur2", name: "Nursery 2", level: "Nursery" },
+  { id: "c-pri1", name: "Primary 1", level: "Primary" },
+  { id: "c-pri3", name: "Primary 3", level: "Primary" },
+  { id: "c-pri6", name: "Primary 6", level: "Primary" },
   { id: "c-jss1a", name: "JSS 1A", level: "JSS" },
   { id: "c-jss2a", name: "JSS 2A", level: "JSS" },
+  { id: "c-jss3a", name: "JSS 3A", level: "JSS" },
   { id: "c-ss1a", name: "SS 1A", level: "SS", classTeacherId: "u3" },
   { id: "c-ss1b", name: "SS 1B", level: "SS" },
   { id: "c-ss2a", name: "SS 2A", level: "SS" },
+  { id: "c-ss3a", name: "SS 3A", level: "SS" },
 ];
 
 export const SUBJECTS: Subject[] = [
@@ -130,11 +138,10 @@ function seedScores(): Score[] {
       out.push({
         studentId: st.id,
         subjectId: sub.id,
-        ca1: 8 + (seed % 8),
-        ca2: 10 + ((seed * 3) % 6),
-        assignment: 4 + (seed % 3),
-        practical: 6 + ((seed * 2) % 5),
-        exam: 40 + ((seed * 7) % 25),
+        ca1: 12 + (seed % 8),        // 12–19 / 20
+        ca2: 4 + ((seed * 3) % 6),   // 4–9 / 10
+        assignment: 4 + (seed % 6),  // 4–9 / 10
+        exam: 35 + ((seed * 7) % 25),// 35–59 / 60
       });
     }
   }
@@ -164,7 +171,7 @@ export function gradeFor(total: number): GradeBand {
 }
 
 export function scoreTotals(s: Score) {
-  const caTotal = s.ca1 + s.ca2 + s.assignment + s.practical;
+  const caTotal = s.ca1 + s.ca2 + s.assignment;
   const total = caTotal + s.exam;
   return { caTotal, total };
 }
