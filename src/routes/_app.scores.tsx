@@ -38,7 +38,7 @@ function ScoresPage() {
   });
 
   // Recompute draft when subject changes
-  useMemo(() => {
+  useEffect(() => {
     const map: Record<string, any> = {};
     for (const st of roster) {
       const sc = SCORES.find((x) => x.studentId === st.id && x.subjectId === subject?.id);
