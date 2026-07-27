@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Download, FileCheck2, FileText, Printer } from "lucide-react";
+import { Download, FileCheck2, FileText, Printer, CheckCircle2, Circle } from "lucide-react";
 import { CLASSES, classBroadsheet, gradeFor } from "@/lib/mock-data";
 import { useAuth, can } from "@/lib/auth-context";
 
@@ -13,9 +13,22 @@ export const Route = createFileRoute("/_app/results")({
   component: ResultsPage,
 });
 
+type WorkflowStage = "draft" | "vp_review" | "principal_review" | "approved" | "published";
+const STAGE_ORDER: WorkflowStage[] = ["draft", "vp_review", "principal_review", "approved", "published"];
+const STAGE_LABEL: Record<WorkflowStage, string> = {
+  draft: "Draft — scores in progress",
+  vp_review: "Submitted · Awaiting VP (Academic)",
+  principal_review: "VP approved · Awaiting Principal",
+  approved: "Principal approved · Ready to publish",
+  published: "Published to parents & report cards",
+};
+
 function ResultsPage() {
   const { user } = useAuth();
   const [classId, setClassId] = useState("c-ss1a");
+  const [workflow, setWorkflow] = useState<Record<string, WorkflowStage>>({ "c-ss1a": "vp_review" });
+  const stage: WorkflowStage = workflow[classId] ?? "draft";
+  const setStage = (s: WorkflowStage) => setWorkflow((w) => ({ ...w, [classId]: s }));
   const { subjects, rows } = useMemo(() => classBroadsheet(classId), [classId]);
 
   const classAvg = rows.length ? Math.round((rows.reduce((a, r) => a + r.average, 0) / rows.length) * 10) / 10 : 0;
