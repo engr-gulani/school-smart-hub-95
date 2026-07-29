@@ -1,21 +1,26 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import { USERS, type User, type Role } from "./mock-data";
 
 interface AuthCtx {
-  user: User | null;
-  loading: boolean;
-  session: Session | null;
+  user: User;
+  session: Session;
   logout: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
 
+/**
+ * Only render children when there's an authenticated user with a loaded
+ * profile. Redirects to /auth otherwise. Consumers get a non-null user.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -24,22 +29,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!sess) {
         if (mounted) {
           setUser(null);
-          setLoading(false);
+          setReady(true);
         }
         return;
       }
       const uid = sess.user.id;
       const email = sess.user.email ?? "";
 
-      // Defer DB calls to avoid deadlock inside onAuthStateChange
       const [{ data: profile }, { data: roleRows }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", uid),
       ]);
 
       const role: Role = (roleRows?.[0]?.role as Role) ?? "student";
-      // Merge with mock data by email so existing screens (teacher subjects,
-      // student record links) keep working for demo accounts.
       const mock = USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
 
       const composed: User = {
@@ -47,14 +49,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: profile?.full_name || mock?.name || email.split("@")[0],
         email,
         role,
-        staffId: profile?.staff_id ?? mock?.staffId,
+        staffId: profile?.staff_id ?? mock?.staffId ?? undefined,
         classIds: mock?.classIds,
         subjectIds: mock?.subjectIds,
         studentId: mock?.studentId,
       };
       if (mounted) {
         setUser(composed);
-        setLoading(false);
+        setReady(true);
       }
     };
 
@@ -74,13 +76,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (ready && !session) navigate({ to: "/auth" });
+  }, [ready, session, navigate]);
+
+  if (!ready) {
+    return (
+      <div className="text-muted-foreground flex min-h-screen items-center justify-center text-sm">
+        Loading…
+      </div>
+    );
+  }
+  if (!session || !user) return null;
+
   const logout = async () => {
     await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
+    navigate({ to: "/auth" });
   };
 
-  return <Ctx.Provider value={{ user, session, loading, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, session, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {
