@@ -1,8 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
-  BookOpen,
   GraduationCap,
   ClipboardCheck,
   FileText,
@@ -11,8 +10,7 @@ import {
   Sparkles,
   ArrowRight,
 } from "lucide-react";
-import { USERS, SCHOOL } from "@/lib/mock-data";
-import { ROLE_LABEL } from "@/lib/auth-context";
+import { SCHOOL } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
