@@ -38,12 +38,6 @@ const FEATURES = [
 ];
 
 function Landing() {
-  const navigate = useNavigate();
-  const quickLogin = (id: string) => {
-    localStorage.setItem("gc.currentUserId", id);
-    navigate({ to: "/dashboard" });
-  };
-
   return (
     <div className="bg-background min-h-screen">
       {/* Hero */}
