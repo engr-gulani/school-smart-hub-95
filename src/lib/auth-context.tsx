@@ -1,37 +1,86 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 import { USERS, type User, type Role } from "./mock-data";
 
 interface AuthCtx {
-  user: User;
-  setUserById: (id: string) => void;
-  logout: () => void;
+  user: User | null;
+  loading: boolean;
+  session: Session | null;
+  logout: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-const STORAGE_KEY = "gc.currentUserId";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [userId, setUserId] = useState<string>(USERS[0].id);
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-    if (stored && USERS.find((u) => u.id === stored)) setUserId(stored);
+    let mounted = true;
+
+    const loadUser = async (sess: Session | null) => {
+      if (!sess) {
+        if (mounted) {
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
+      const uid = sess.user.id;
+      const email = sess.user.email ?? "";
+
+      // Defer DB calls to avoid deadlock inside onAuthStateChange
+      const [{ data: profile }, { data: roleRows }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+      ]);
+
+      const role: Role = (roleRows?.[0]?.role as Role) ?? "student";
+      // Merge with mock data by email so existing screens (teacher subjects,
+      // student record links) keep working for demo accounts.
+      const mock = USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
+
+      const composed: User = {
+        id: uid,
+        name: profile?.full_name || mock?.name || email.split("@")[0],
+        email,
+        role,
+        staffId: profile?.staff_id ?? mock?.staffId,
+        classIds: mock?.classIds,
+        subjectIds: mock?.subjectIds,
+        studentId: mock?.studentId,
+      };
+      if (mounted) {
+        setUser(composed);
+        setLoading(false);
+      }
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s);
+      setTimeout(() => loadUser(s), 0);
+    });
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      loadUser(data.session);
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
-  const user = USERS.find((u) => u.id === userId) ?? USERS[0];
-
-  const setUserById = (id: string) => {
-    setUserId(id);
-    if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, id);
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
   };
 
-  const logout = () => {
-    if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY);
-    setUserId(USERS[0].id);
-  };
-
-  return <Ctx.Provider value={{ user, setUserById, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, session, loading, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {
@@ -88,4 +137,3 @@ export function can(role: Role, action: Action): boolean {
       return role === "student";
   }
 }
-
