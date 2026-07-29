@@ -23,7 +23,6 @@ import { Route as AppMyResultsRouteImport } from './routes/_app.my-results'
 import { Route as AppMyProfileRouteImport } from './routes/_app.my-profile'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClassesRouteImport } from './routes/_app.classes'
-import { Route as ApiPublicSeedAdminRouteImport } from './routes/api/public/seed-admin'
 import { Route as AppReportCardStudentIdRouteImport } from './routes/_app.report-card.$studentId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -95,11 +94,6 @@ const AppClassesRoute = AppClassesRouteImport.update({
   path: '/classes',
   getParentRoute: () => AppRoute,
 } as any)
-const ApiPublicSeedAdminRoute = ApiPublicSeedAdminRouteImport.update({
-  id: '/api/public/seed-admin',
-  path: '/api/public/seed-admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppReportCardStudentIdRoute = AppReportCardStudentIdRouteImport.update({
   id: '/report-card/$studentId',
   path: '/report-card/$studentId',
@@ -121,7 +115,6 @@ export interface FileRoutesByFullPath {
   '/subjects': typeof AppSubjectsRoute
   '/teachers': typeof AppTeachersRoute
   '/report-card/$studentId': typeof AppReportCardStudentIdRoute
-  '/api/public/seed-admin': typeof ApiPublicSeedAdminRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -138,7 +131,6 @@ export interface FileRoutesByTo {
   '/subjects': typeof AppSubjectsRoute
   '/teachers': typeof AppTeachersRoute
   '/report-card/$studentId': typeof AppReportCardStudentIdRoute
-  '/api/public/seed-admin': typeof ApiPublicSeedAdminRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -157,7 +149,6 @@ export interface FileRoutesById {
   '/_app/subjects': typeof AppSubjectsRoute
   '/_app/teachers': typeof AppTeachersRoute
   '/_app/report-card/$studentId': typeof AppReportCardStudentIdRoute
-  '/api/public/seed-admin': typeof ApiPublicSeedAdminRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -176,7 +167,6 @@ export interface FileRouteTypes {
     | '/subjects'
     | '/teachers'
     | '/report-card/$studentId'
-    | '/api/public/seed-admin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -193,7 +183,6 @@ export interface FileRouteTypes {
     | '/subjects'
     | '/teachers'
     | '/report-card/$studentId'
-    | '/api/public/seed-admin'
   id:
     | '__root__'
     | '/'
@@ -211,14 +200,12 @@ export interface FileRouteTypes {
     | '/_app/subjects'
     | '/_app/teachers'
     | '/_app/report-card/$studentId'
-    | '/api/public/seed-admin'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ApiPublicSeedAdminRoute: typeof ApiPublicSeedAdminRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -321,13 +308,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClassesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/api/public/seed-admin': {
-      id: '/api/public/seed-admin'
-      path: '/api/public/seed-admin'
-      fullPath: '/api/public/seed-admin'
-      preLoaderRoute: typeof ApiPublicSeedAdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_app/report-card/$studentId': {
       id: '/_app/report-card/$studentId'
       path: '/report-card/$studentId'
@@ -374,7 +354,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRoute,
-  ApiPublicSeedAdminRoute: ApiPublicSeedAdminRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
