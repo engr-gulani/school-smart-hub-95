@@ -1,37 +1,100 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 import { USERS, type User, type Role } from "./mock-data";
 
 interface AuthCtx {
   user: User;
-  setUserById: (id: string) => void;
-  logout: () => void;
+  session: Session;
+  logout: () => Promise<void>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
 
-const STORAGE_KEY = "gc.currentUserId";
-
+/**
+ * Only render children when there's an authenticated user with a loaded
+ * profile. Redirects to /auth otherwise. Consumers get a non-null user.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [userId, setUserId] = useState<string>(USERS[0].id);
+  const navigate = useNavigate();
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
-    if (stored && USERS.find((u) => u.id === stored)) setUserId(stored);
+    let mounted = true;
+
+    const loadUser = async (sess: Session | null) => {
+      if (!sess) {
+        if (mounted) {
+          setUser(null);
+          setReady(true);
+        }
+        return;
+      }
+      const uid = sess.user.id;
+      const email = sess.user.email ?? "";
+
+      const [{ data: profile }, { data: roleRows }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", uid),
+      ]);
+
+      const role: Role = (roleRows?.[0]?.role as Role) ?? "student";
+      const mock = USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
+
+      const composed: User = {
+        id: uid,
+        name: profile?.full_name || mock?.name || email.split("@")[0],
+        email,
+        role,
+        staffId: profile?.staff_id ?? mock?.staffId ?? undefined,
+        classIds: mock?.classIds,
+        subjectIds: mock?.subjectIds,
+        studentId: mock?.studentId,
+      };
+      if (mounted) {
+        setUser(composed);
+        setReady(true);
+      }
+    };
+
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s);
+      setTimeout(() => loadUser(s), 0);
+    });
+
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      loadUser(data.session);
+    });
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
-  const user = USERS.find((u) => u.id === userId) ?? USERS[0];
+  useEffect(() => {
+    if (ready && !session) navigate({ to: "/auth" });
+  }, [ready, session, navigate]);
 
-  const setUserById = (id: string) => {
-    setUserId(id);
-    if (typeof window !== "undefined") localStorage.setItem(STORAGE_KEY, id);
+  if (!ready) {
+    return (
+      <div className="text-muted-foreground flex min-h-screen items-center justify-center text-sm">
+        Loading…
+      </div>
+    );
+  }
+  if (!session || !user) return null;
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
   };
 
-  const logout = () => {
-    if (typeof window !== "undefined") localStorage.removeItem(STORAGE_KEY);
-    setUserId(USERS[0].id);
-  };
-
-  return <Ctx.Provider value={{ user, setUserById, logout }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ user, session, logout }}>{children}</Ctx.Provider>;
 }
 
 export function useAuth() {
@@ -88,4 +151,3 @@ export function can(role: Role, action: Action): boolean {
       return role === "student";
   }
 }
-
