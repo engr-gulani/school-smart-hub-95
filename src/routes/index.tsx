@@ -139,34 +139,23 @@ function Landing() {
         </div>
       </section>
 
-      {/* Quick sign-in */}
+      {/* Sign-in CTA */}
       <section id="roles" className="bg-muted/40 border-y">
-        <div className="mx-auto max-w-6xl px-6 py-14">
-          <div className="mb-6 flex items-end justify-between gap-4">
-            <div>
-              <p className="text-primary text-xs font-semibold tracking-widest uppercase">Demo access</p>
-              <h2 className="font-display mt-1 text-2xl font-semibold">Sign in as any role</h2>
-              <p className="text-muted-foreground mt-1 text-sm">Prototype — pick a user to explore that role's dashboard.</p>
-            </div>
-            <BookOpen className="text-muted-foreground h-6 w-6" />
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            {USERS.map((u) => (
-              <button
-                key={u.id}
-                onClick={() => quickLogin(u.id)}
-                className="group border-border bg-card hover:border-primary hover:shadow-elegant flex items-center gap-3 rounded-xl border p-4 text-left transition"
-              >
-                <div className="bg-gradient-primary text-primary-foreground flex h-11 w-11 items-center justify-center rounded-lg text-sm font-semibold">
-                  {u.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold">{u.name}</p>
-                  <p className="text-muted-foreground truncate text-xs">{ROLE_LABEL[u.role]}</p>
-                </div>
-                <ArrowRight className="text-muted-foreground group-hover:text-primary h-4 w-4 transition" />
-              </button>
-            ))}
+        <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+          <p className="text-primary text-xs font-semibold tracking-widest uppercase">Get started</p>
+          <h2 className="font-display mt-2 text-3xl font-semibold">Sign in to your school portal</h2>
+          <p className="text-muted-foreground mx-auto mt-2 max-w-lg text-sm">
+            Staff and students access dashboards, results, and administration based on their role.
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <Link to="/auth">
+              <Button size="lg" className="gap-1">
+                Sign in <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+            <Link to="/auth">
+              <Button size="lg" variant="outline">Create account</Button>
+            </Link>
           </div>
         </div>
       </section>
