@@ -11,12 +11,13 @@ import {
   CalendarCheck2,
   FileText,
   Award,
+  UserPlus,
 } from "lucide-react";
 import { StatCard } from "@/components/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth-context";
+import { useAuth, can } from "@/lib/auth-context";
 import {
   CLASSES,
   NOTIFICATIONS,
@@ -73,9 +74,18 @@ function Dashboard() {
               : "Here's the pulse of the school this term."}
           </p>
         </div>
-        <Badge variant="secondary" className="w-fit">
-          Next term begins {SCHOOL.nextTermBegins}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          {can(user.role, "manage_school") && (
+            <Link to="/users">
+              <Button size="sm" className="gap-2">
+                <UserPlus className="h-4 w-4" /> Create user account
+              </Button>
+            </Link>
+          )}
+          <Badge variant="secondary" className="w-fit">
+            Next term begins {SCHOOL.nextTermBegins}
+          </Badge>
+        </div>
       </div>
 
       {isTeacherView ? (
