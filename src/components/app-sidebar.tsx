@@ -11,6 +11,7 @@ import {
   LogOut,
   Sparkles,
   User as UserIcon,
+  UserCog,
   FileText,
   Bell,
 } from "lucide-react";
@@ -66,7 +67,10 @@ export function AppSidebar() {
 
   const admin: NavItem[] = isStudent
     ? []
-    : [{ title: "School Settings", url: "/settings", icon: Settings, show: can(role, "manage_school") }];
+    : [
+        { title: "User Accounts", url: "/users", icon: UserCog, show: can(role, "manage_school") },
+        { title: "School Settings", url: "/settings", icon: Settings, show: can(role, "manage_school") },
+      ];
 
 
   const isActive = (u: string) => pathname === u || pathname.startsWith(u + "/");
