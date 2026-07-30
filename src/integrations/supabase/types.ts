@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      classes: {
+        Row: {
+          class_teacher_id: string | null
+          created_at: string
+          id: string
+          level: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          class_teacher_id?: string | null
+          created_at?: string
+          id: string
+          level: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          class_teacher_id?: string | null
+          created_at?: string
+          id?: string
+          level?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_class_teacher_id_fkey"
+            columns: ["class_teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           admission_no: string | null
@@ -46,6 +84,256 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      result_approvals: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          principal_approved_at: string | null
+          principal_approved_by: string | null
+          published_at: string | null
+          published_by: string | null
+          stage: string
+          submitted_at: string | null
+          submitted_by: string | null
+          updated_at: string
+          vp_approved_at: string | null
+          vp_approved_by: string | null
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          principal_approved_at?: string | null
+          principal_approved_by?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          stage?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          vp_approved_at?: string | null
+          vp_approved_by?: string | null
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          principal_approved_at?: string | null
+          principal_approved_by?: string | null
+          published_at?: string | null
+          published_by?: string | null
+          stage?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          updated_at?: string
+          vp_approved_at?: string | null
+          vp_approved_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "result_approvals_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: true
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "result_approvals_principal_approved_by_fkey"
+            columns: ["principal_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "result_approvals_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "result_approvals_submitted_by_fkey"
+            columns: ["submitted_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "result_approvals_vp_approved_by_fkey"
+            columns: ["vp_approved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scores: {
+        Row: {
+          assignment: number
+          ca1: number
+          ca2: number
+          created_at: string
+          entered_by: string | null
+          exam: number
+          id: string
+          student_id: string
+          subject_id: string
+          updated_at: string
+        }
+        Insert: {
+          assignment?: number
+          ca1?: number
+          ca2?: number
+          created_at?: string
+          entered_by?: string | null
+          exam?: number
+          id?: string
+          student_id: string
+          subject_id: string
+          updated_at?: string
+        }
+        Update: {
+          assignment?: number
+          ca1?: number
+          ca2?: number
+          created_at?: string
+          entered_by?: string | null
+          exam?: number
+          id?: string
+          student_id?: string
+          subject_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scores_entered_by_fkey"
+            columns: ["entered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scores_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scores_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          address: string | null
+          admission_no: string
+          class_id: string
+          created_at: string
+          dob: string | null
+          full_name: string
+          gender: string
+          id: string
+          parent_name: string | null
+          parent_phone: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          admission_no: string
+          class_id: string
+          created_at?: string
+          dob?: string | null
+          full_name: string
+          gender?: string
+          id: string
+          parent_name?: string | null
+          parent_phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          admission_no?: string
+          class_id?: string
+          created_at?: string
+          dob?: string | null
+          full_name?: string
+          gender?: string
+          id?: string
+          parent_name?: string | null
+          parent_phone?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          class_id: string
+          code: string
+          created_at: string
+          id: string
+          name: string
+          teacher_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_id: string
+          code: string
+          created_at?: string
+          id: string
+          name: string
+          teacher_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_id?: string
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          teacher_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subjects_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subjects_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
