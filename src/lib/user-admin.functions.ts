@@ -43,9 +43,20 @@ export const listPortalUsers = createServerFn({ method: "GET" })
     const roleMap = new Map<string, string>();
     (roles ?? []).forEach((r: { user_id: string; role: string }) => roleMap.set(r.user_id, r.role));
 
-    return (profiles ?? []).map((p: Record<string, string | null>) => ({
+    type Row = {
+      id: string;
+      full_name: string | null;
+      email: string | null;
+      staff_id: string | null;
+      admission_no: string | null;
+      class_id: string | null;
+      created_at: string;
+      role: string;
+    };
+
+    return ((profiles ?? []) as Omit<Row, "role">[]).map((p): Row => ({
       ...p,
-      role: roleMap.get(p.id as string) ?? "student",
+      role: roleMap.get(p.id) ?? "student",
     }));
   });
 

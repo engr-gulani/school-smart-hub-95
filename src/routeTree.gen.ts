@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppTeachersRouteImport } from './routes/_app.teachers'
 import { Route as AppSubjectsRouteImport } from './routes/_app.subjects'
 import { Route as AppStudentsRouteImport } from './routes/_app.students'
@@ -38,6 +39,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppTeachersRoute = AppTeachersRouteImport.update({
   id: '/teachers',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/students': typeof AppStudentsRoute
   '/subjects': typeof AppSubjectsRoute
   '/teachers': typeof AppTeachersRoute
+  '/users': typeof AppUsersRoute
   '/report-card/$studentId': typeof AppReportCardStudentIdRoute
 }
 export interface FileRoutesByTo {
@@ -130,6 +137,7 @@ export interface FileRoutesByTo {
   '/students': typeof AppStudentsRoute
   '/subjects': typeof AppSubjectsRoute
   '/teachers': typeof AppTeachersRoute
+  '/users': typeof AppUsersRoute
   '/report-card/$studentId': typeof AppReportCardStudentIdRoute
 }
 export interface FileRoutesById {
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/_app/students': typeof AppStudentsRoute
   '/_app/subjects': typeof AppSubjectsRoute
   '/_app/teachers': typeof AppTeachersRoute
+  '/_app/users': typeof AppUsersRoute
   '/_app/report-card/$studentId': typeof AppReportCardStudentIdRoute
 }
 export interface FileRouteTypes {
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/students'
     | '/subjects'
     | '/teachers'
+    | '/users'
     | '/report-card/$studentId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/students'
     | '/subjects'
     | '/teachers'
+    | '/users'
     | '/report-card/$studentId'
   id:
     | '__root__'
@@ -199,6 +210,7 @@ export interface FileRouteTypes {
     | '/_app/students'
     | '/_app/subjects'
     | '/_app/teachers'
+    | '/_app/users'
     | '/_app/report-card/$studentId'
   fileRoutesById: FileRoutesById
 }
@@ -230,6 +242,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/users': {
+      id: '/_app/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AppUsersRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/teachers': {
       id: '/_app/teachers'
@@ -330,6 +349,7 @@ interface AppRouteChildren {
   AppStudentsRoute: typeof AppStudentsRoute
   AppSubjectsRoute: typeof AppSubjectsRoute
   AppTeachersRoute: typeof AppTeachersRoute
+  AppUsersRoute: typeof AppUsersRoute
   AppReportCardStudentIdRoute: typeof AppReportCardStudentIdRoute
 }
 
@@ -345,6 +365,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppStudentsRoute: AppStudentsRoute,
   AppSubjectsRoute: AppSubjectsRoute,
   AppTeachersRoute: AppTeachersRoute,
+  AppUsersRoute: AppUsersRoute,
   AppReportCardStudentIdRoute: AppReportCardStudentIdRoute,
 }
 
@@ -358,13 +379,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
