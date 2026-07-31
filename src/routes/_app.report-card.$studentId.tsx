@@ -89,7 +89,7 @@ function ReportCard() {
         <section className="mt-5 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
           <Field label="Student" value={student.name} />
           <Field label="Admission #" value={student.admissionNo} mono />
-          <Field label="Class" value={cls.name} />
+          <Field label="Class" value={cls?.name ?? student.classId} />
           <Field label="Gender" value={student.gender} />
         </section>
 
