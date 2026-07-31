@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UserPlus } from "lucide-react";
 import { useAcademics } from "@/lib/use-academics";
-import { ROLE_LABEL, useAuth, can, type Role } from "@/lib/auth-context";
+import { ROLE_LABEL, useAuth, can } from "@/lib/auth-context";
+import type { Role } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_app/teachers")({
   head: () => ({
