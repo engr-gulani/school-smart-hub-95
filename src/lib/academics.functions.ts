@@ -82,8 +82,24 @@ export const getAcademics = createServerFn({ method: "GET" })
 
     const staffMap = new Map(staff.map((s) => [s.id, s]));
 
+    const myProfile = ((profilesRes.data ?? []) as any[]).find((p) => p.id === context.userId);
+    const myStudent = ((studentsRes.data ?? []) as any[]).find(
+      (s) =>
+        s.user_id === context.userId ||
+        (myProfile?.admission_no &&
+          String(s.admission_no).toLowerCase() === String(myProfile.admission_no).toLowerCase()),
+    );
+
     return {
-      me: { id: context.userId, roles: await callerRoles(context) },
+      me: {
+        id: context.userId,
+        roles: await callerRoles(context),
+        name: (myProfile?.full_name as string) ?? "",
+        email: (myProfile?.email as string) ?? "",
+        admissionNo: (myProfile?.admission_no as string) ?? null,
+        studentId: (myStudent?.id as string) ?? null,
+      },
+
       classes: ((classesRes.data ?? []) as any[]).map((c) => ({
         id: c.id as string,
         name: c.name as string,
