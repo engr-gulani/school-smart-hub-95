@@ -1,34 +1,46 @@
-import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { FileText, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import {
-  CLASSES,
-  PUBLISHED_CLASS_IDS,
-  SCORES,
-  STUDENTS,
-  SUBJECTS,
-  classBroadsheet,
-  gradeFor,
-  ordinal,
-  scoreTotals,
-} from "@/lib/mock-data";
+import { useAcademics, buildBroadsheet, stageFor, gradeFor, scoreTotals } from "@/lib/use-academics";
+import { ordinal, SCHOOL } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_app/my-results")({
-  head: () => ({ meta: [{ title: "My results · Student portal" }] }),
+  head: () => ({
+    meta: [
+      { title: "My results · Student portal" },
+      { name: "description", content: "Your published term results, grades and class position." },
+    ],
+  }),
   component: MyResults,
 });
 
 function MyResults() {
   const { user } = useAuth();
-  if (user.role !== "student" || !user.studentId) return <Navigate to="/dashboard" />;
-  const student = STUDENTS.find((s) => s.id === user.studentId);
-  if (!student) return <Navigate to="/dashboard" />;
+  const { data, isLoading } = useAcademics();
 
-  const cls = CLASSES.find((c) => c.id === student.classId)!;
-  const published = PUBLISHED_CLASS_IDS.includes(cls.id);
+  if (isLoading) {
+    return <p className="text-muted-foreground py-16 text-center text-sm">Loading your results…</p>;
+  }
+
+  const studentId = data?.me.studentId ?? null;
+  const student = data?.students.find((s) => s.id === studentId);
+
+  if (!student) {
+    return (
+      <div className="mx-auto max-w-lg py-16 text-center">
+        <h1 className="font-display text-2xl font-semibold">No student record linked</h1>
+        <p className="text-muted-foreground mt-2 text-sm">
+          Your account isn't linked to a student record yet. Please contact the school administrator.
+        </p>
+      </div>
+    );
+  }
+
+  const cls = data!.classes.find((c) => c.id === student.classId);
+  const published = stageFor(data, student.classId) === "published";
 
   if (!published) {
     return (
@@ -44,9 +56,8 @@ function MyResults() {
     );
   }
 
-  const { rows } = classBroadsheet(cls.id);
-  const myRow = rows.find((r) => r.student.id === student.id)!;
-  const classSubjects = SUBJECTS.filter((s) => s.classId === cls.id);
+  const { subjects, rows } = buildBroadsheet(data, student.classId);
+  const myRow = rows.find((r) => r.student.id === student.id);
 
   return (
     <div className="space-y-5">
@@ -54,7 +65,7 @@ function MyResults() {
         <div>
           <h1 className="font-display text-2xl font-semibold">My results</h1>
           <p className="text-muted-foreground text-sm">
-            {cls.name} · First Term · Published
+            {cls?.name ?? student.classId} · {SCHOOL.term} · Published
           </p>
         </div>
         <Link to="/report-card/$studentId" params={{ studentId: student.id }}>
@@ -65,10 +76,10 @@ function MyResults() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <MetricCard label="Total" value={myRow.total} />
-        <MetricCard label="Average" value={myRow.average.toFixed(1)} />
-        <MetricCard label="Position" value={ordinal(myRow.position)} accent />
-        <MetricCard label="Overall grade" value={gradeFor(myRow.average).grade} accent />
+        <MetricCard label="Total" value={myRow?.total ?? 0} />
+        <MetricCard label="Average" value={(myRow?.average ?? 0).toFixed(1)} />
+        <MetricCard label="Position" value={myRow ? ordinal(myRow.position) : "—"} accent />
+        <MetricCard label="Overall grade" value={gradeFor(myRow?.average ?? 0).grade} accent />
       </div>
 
       <Card className="shadow-card">
@@ -90,9 +101,9 @@ function MyResults() {
               </tr>
             </thead>
             <tbody>
-              {classSubjects.map((sub) => {
-                const sc = SCORES.find((x) => x.studentId === student.id && x.subjectId === sub.id);
-                const { total } = sc ? scoreTotals(sc) : { total: 0 };
+              {subjects.map((sub) => {
+                const sc = data!.scores.find((x) => x.studentId === student.id && x.subjectId === sub.id);
+                const total = sc ? scoreTotals(sc).total : 0;
                 const g = gradeFor(total);
                 return (
                   <tr key={sub.id} className="hover:bg-muted/40 border-b last:border-0">
@@ -109,36 +120,28 @@ function MyResults() {
                   </tr>
                 );
               })}
+              {subjects.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="text-muted-foreground py-8 text-center text-sm">
+                    No subjects registered for your class yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </CardContent>
       </Card>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="shadow-card">
-          <CardHeader><CardTitle className="text-sm">Class teacher's comment</CardTitle></CardHeader>
-          <CardContent className="text-sm">
-            <p>A diligent student with steady improvement across core subjects. Keep up the reading habit.</p>
-            <p className="text-muted-foreground mt-3 text-xs italic">— Mrs. Grace Adewale</p>
-          </CardContent>
-        </Card>
-        <Card className="shadow-card">
-          <CardHeader><CardTitle className="text-sm">Principal's comment</CardTitle></CardHeader>
-          <CardContent className="text-sm">
-            <p>Very good performance this term. Aim higher next term — we believe in you.</p>
-            <p className="text-muted-foreground mt-3 text-xs italic">— Mr. Samuel Okoro</p>
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }
 
 function MetricCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
-    <Card className={`shadow-card ${accent ? "bg-gradient-primary text-primary-foreground border-transparent" : ""}`}>
+    <Card className={accent ? "bg-gradient-primary text-primary-foreground shadow-card" : "shadow-card"}>
       <CardContent className="p-5">
-        <p className={`text-xs uppercase tracking-widest ${accent ? "opacity-80" : "text-muted-foreground"}`}>{label}</p>
+        <p className={`text-xs uppercase tracking-widest ${accent ? "opacity-80" : "text-muted-foreground"}`}>
+          {label}
+        </p>
         <p className="font-display mt-1 text-3xl font-semibold tabular-nums">{value}</p>
       </CardContent>
     </Card>

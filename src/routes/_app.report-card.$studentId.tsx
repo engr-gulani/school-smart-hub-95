@@ -1,54 +1,51 @@
-import { createFileRoute, Link, Navigate, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Printer, Sparkles } from "lucide-react";
-import {
-  CLASSES,
-  PUBLISHED_CLASS_IDS,
-  SCHOOL,
-  SCORES,
-  STUDENTS,
-  SUBJECTS,
-  classBroadsheet,
-  gradeFor,
-  ordinal,
-  scoreTotals,
-} from "@/lib/mock-data";
+import { SCHOOL, ordinal } from "@/lib/mock-data";
+import { useAcademics, buildBroadsheet, stageFor, gradeFor, scoreTotals } from "@/lib/use-academics";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_app/report-card/$studentId")({
-  head: ({ params }) => {
-    const st = STUDENTS.find((s) => s.id === params.studentId);
-    return {
-      meta: [
-        { title: st ? `${st.name} — Report card` : "Report card" },
-        { name: "robots", content: "noindex" },
-      ],
-    };
-  },
-  loader: ({ params }) => {
-    const st = STUDENTS.find((s) => s.id === params.studentId);
-    if (!st) throw notFound();
-    return { studentId: st.id };
-  },
+  head: () => ({
+    meta: [
+      { title: "Report card · Greenfield College Portal" },
+      { name: "description", content: "Printable A4 term report card with grades, position and comments." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: ReportCard,
 });
 
 function ReportCard() {
-  const { studentId } = Route.useLoaderData();
+  const { studentId } = Route.useParams();
   const { user } = useAuth();
-  const student = STUDENTS.find((s) => s.id === studentId)!;
+  const { data, isLoading } = useAcademics();
+
+  if (isLoading) return <p className="text-muted-foreground py-16 text-center text-sm">Loading report card…</p>;
+
+  const student = data?.students.find((s) => s.id === studentId);
+  if (!student) {
+    return (
+      <div className="py-16 text-center text-sm text-muted-foreground">Student record not found.</div>
+    );
+  }
 
   // Students may only view their own report card, and only once published.
   if (user.role === "student") {
-    if (user.studentId !== student.id) return <Navigate to="/my-results" />;
-    if (!PUBLISHED_CLASS_IDS.includes(student.classId)) return <Navigate to="/my-results" />;
+    if (data?.me.studentId !== student.id) return <Navigate to="/my-results" />;
+    if (stageFor(data, student.classId) !== "published") return <Navigate to="/my-results" />;
   }
 
-  const cls = CLASSES.find((c) => c.id === student.classId)!;
-  const { rows } = classBroadsheet(student.classId);
-  const myRow = rows.find((r) => r.student.id === student.id)!;
-  const classSubjects = SUBJECTS.filter((s) => s.classId === student.classId);
+  const cls = data!.classes.find((c) => c.id === student.classId);
+  const { subjects: classSubjects, rows } = buildBroadsheet(data, student.classId);
+  const myRow = rows.find((r) => r.student.id === student.id) ?? {
+    total: 0,
+    average: 0,
+    position: rows.length + 1,
+  };
+  const SCORES = data!.scores;
+
   
 
 
@@ -92,7 +89,7 @@ function ReportCard() {
         <section className="mt-5 grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
           <Field label="Student" value={student.name} />
           <Field label="Admission #" value={student.admissionNo} mono />
-          <Field label="Class" value={cls.name} />
+          <Field label="Class" value={cls?.name ?? student.classId} />
           <Field label="Gender" value={student.gender} />
         </section>
 
