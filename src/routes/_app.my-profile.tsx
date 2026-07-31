@@ -1,43 +1,84 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { CLASSES, SCHOOL, STUDENTS, attendanceFor } from "@/lib/mock-data";
+import { useAcademics, useRefreshAcademics } from "@/lib/use-academics";
+import { updateMyContact } from "@/lib/academics.functions";
+import { SCHOOL, attendanceFor } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_app/my-profile")({
-  head: () => ({ meta: [{ title: "My profile · Student portal" }] }),
+  head: () => ({
+    meta: [
+      { title: "My profile · Student portal" },
+      { name: "description", content: "Your personal details, guardian contact and password settings." },
+    ],
+  }),
   component: MyProfile,
 });
 
 function MyProfile() {
   const { user } = useAuth();
-  if (user.role !== "student" || !user.studentId) return <Navigate to="/dashboard" />;
-  const student = STUDENTS.find((s) => s.id === user.studentId)!;
-  const cls = CLASSES.find((c) => c.id === student.classId)!;
-  const attendance = attendanceFor(student.id);
+  const { data, isLoading } = useAcademics();
+  const refresh = useRefreshAcademics();
 
-  const [phone, setPhone] = useState(student.parentPhone);
-  const [email, setEmail] = useState(user.email);
-  const [pw, setPw] = useState({ current: "", next: "", confirm: "" });
+  const student = data?.students.find((s) => s.id === data?.me.studentId);
+  const cls = data?.classes.find((c) => c.id === student?.classId);
 
-  const savePersonal = (e: React.FormEvent) => {
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [pw, setPw] = useState({ next: "", confirm: "" });
+
+  useEffect(() => {
+    if (student) {
+      setPhone(student.parentPhone ?? "");
+      setAddress(student.address ?? "");
+    }
+  }, [student?.id, student?.parentPhone, student?.address]);
+
+  const saveContact = useMutation({
+    mutationFn: () => updateMyContact({ data: { parentPhone: phone, address } }),
+    onSuccess: () => {
+      toast.success("Contact details updated");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const changePassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Contact details updated");
-  };
-
-  const changePassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pw.next.length < 6) return toast.error("New password must be at least 6 characters");
+    if (pw.next.length < 8) return toast.error("New password must be at least 8 characters");
     if (pw.next !== pw.confirm) return toast.error("Passwords do not match");
-    setPw({ current: "", next: "", confirm: "" });
+    const { error } = await supabase.auth.updateUser({ password: pw.next });
+    if (error) return toast.error(error.message);
+    setPw({ next: "", confirm: "" });
     toast.success("Password changed successfully");
   };
 
-  const initials = student.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
+  if (isLoading) return <p className="text-muted-foreground py-16 text-center text-sm">Loading your profile…</p>;
+
+  if (!student) {
+    return (
+      <div className="mx-auto max-w-lg py-16 text-center">
+        <h1 className="font-display text-2xl font-semibold">No student record linked</h1>
+        <p className="text-muted-foreground mt-2 text-sm">
+          Your account isn't linked to a student record yet. Please contact the school administrator.
+        </p>
+      </div>
+    );
+  }
+
+  const attendance = attendanceFor(student.id);
+  const initials = student.name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("");
 
   return (
     <div className="space-y-5">
@@ -53,7 +94,9 @@ function MyProfile() {
           </div>
           <div className="flex-1">
             <p className="font-display text-xl font-semibold">{student.name}</p>
-            <p className="text-muted-foreground text-sm">{cls.name} · {SCHOOL.session} · {SCHOOL.term}</p>
+            <p className="text-muted-foreground text-sm">
+              {cls?.name ?? student.classId} · {SCHOOL.session} · {SCHOOL.term}
+            </p>
             <p className="text-muted-foreground font-mono text-xs">{student.admissionNo}</p>
           </div>
           <div className="grid grid-cols-3 gap-3 text-center">
@@ -66,51 +109,75 @@ function MyProfile() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="shadow-card">
-          <CardHeader><CardTitle className="text-base">Personal information</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Personal information</CardTitle>
+          </CardHeader>
           <CardContent className="space-y-3 text-sm">
             <Field label="Gender" value={student.gender} />
-            <Field label="Date of birth" value={student.dob} />
-            <Field label="Parent / Guardian" value={student.parentName} />
-            <Field label="Address" value={student.address} />
+            <Field label="Date of birth" value={student.dob || "—"} />
+            <Field label="Parent / Guardian" value={student.parentName || "—"} />
+            <Field label="Email" value={user.email} />
           </CardContent>
         </Card>
 
         <Card className="shadow-card">
-          <CardHeader><CardTitle className="text-base">Update contact</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle className="text-base">Update contact</CardTitle>
+          </CardHeader>
           <CardContent>
-            <form onSubmit={savePersonal} className="space-y-3">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveContact.mutate();
+              }}
+              className="space-y-3"
+            >
               <div className="space-y-1">
-                <Label htmlFor="phone">Phone</Label>
+                <Label htmlFor="phone">Guardian phone</Label>
                 <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Label htmlFor="address">Home address</Label>
+                <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} />
               </div>
-              <Button type="submit" size="sm">Save changes</Button>
+              <Button type="submit" size="sm" disabled={saveContact.isPending}>
+                {saveContact.isPending ? "Saving…" : "Save changes"}
+              </Button>
             </form>
           </CardContent>
         </Card>
       </div>
 
       <Card className="shadow-card">
-        <CardHeader><CardTitle className="text-base">Change password</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="text-base">Change password</CardTitle>
+        </CardHeader>
         <CardContent>
           <form onSubmit={changePassword} className="grid gap-3 md:grid-cols-3">
             <div className="space-y-1">
-              <Label htmlFor="current">Current password</Label>
-              <Input id="current" type="password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} required />
-            </div>
-            <div className="space-y-1">
               <Label htmlFor="next">New password</Label>
-              <Input id="next" type="password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} required />
+              <Input
+                id="next"
+                type="password"
+                value={pw.next}
+                onChange={(e) => setPw({ ...pw, next: e.target.value })}
+                required
+              />
             </div>
             <div className="space-y-1">
               <Label htmlFor="confirm">Confirm new password</Label>
-              <Input id="confirm" type="password" value={pw.confirm} onChange={(e) => setPw({ ...pw, confirm: e.target.value })} required />
+              <Input
+                id="confirm"
+                type="password"
+                value={pw.confirm}
+                onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
+                required
+              />
             </div>
-            <div className="md:col-span-3">
-              <Button type="submit" size="sm">Update password</Button>
+            <div className="flex items-end">
+              <Button type="submit" size="sm">
+                Update password
+              </Button>
             </div>
           </form>
         </CardContent>
