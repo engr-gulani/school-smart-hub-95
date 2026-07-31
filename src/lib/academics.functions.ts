@@ -53,11 +53,12 @@ export const getAcademics = createServerFn({ method: "GET" })
         supabase.from("subjects").select("id, name, code, class_id, teacher_id").order("name"),
         supabase
           .from("students")
-          .select("id, admission_no, full_name, gender, dob, class_id, parent_name, parent_phone, address")
+          .select("id, admission_no, full_name, gender, dob, class_id, parent_name, parent_phone, address, user_id")
           .order("full_name"),
         supabase.from("scores").select("student_id, subject_id, ca1, ca2, assignment, exam"),
         supabase.from("result_approvals").select("class_id, stage, submitted_at, vp_approved_at, principal_approved_at, published_at"),
-        supabase.from("profiles").select("id, full_name, email, staff_id"),
+        supabase.from("profiles").select("id, full_name, email, staff_id, admission_no, class_id"),
+
         supabase.from("user_roles").select("user_id, role"),
       ]);
 
