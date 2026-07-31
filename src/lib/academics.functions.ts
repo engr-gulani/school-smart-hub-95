@@ -126,6 +126,7 @@ export const getAcademics = createServerFn({ method: "GET" })
         parentName: (s.parent_name as string) ?? "",
         parentPhone: (s.parent_phone as string) ?? "",
         address: (s.address as string) ?? "",
+        userId: (s.user_id as string) ?? null,
       })),
       scores: ((scoresRes.data ?? []) as any[]).map((s) => ({
         studentId: s.student_id as string,
@@ -287,4 +288,91 @@ export const updateResultApproval = createServerFn({ method: "POST" })
       .upsert({ class_id: data.classId, ...patch }, { onConflict: "class_id" });
     if (error) throw new Error(error.message);
     return { stage: (patch as any).stage as string };
+  });
+
+const studentSchema = z.object({
+  id: z.string().trim().max(80).optional().or(z.literal("")),
+  admissionNo: z.string().trim().min(1).max(50),
+  fullName: z.string().trim().min(2).max(120),
+  gender: z.enum(["Male", "Female"]),
+  dob: z.string().trim().max(20).optional().or(z.literal("")),
+  classId: z.string().trim().min(1).max(80),
+  parentName: z.string().trim().max(120).optional().or(z.literal("")),
+  parentPhone: z.string().trim().max(40).optional().or(z.literal("")),
+  address: z.string().trim().max(240).optional().or(z.literal("")),
+});
+
+/** Create or update a student record. Admins, or the class teacher of that class. */
+export const upsertStudent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => studentSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const roles = await callerRoles(context);
+    if (!isAdmin(roles)) {
+      const { data: cls } = await context.supabase
+        .from("classes")
+        .select("class_teacher_id")
+        .eq("id", data.classId)
+        .maybeSingle();
+      if (!cls || cls.class_teacher_id !== context.userId) {
+        throw new Error("Only admins or the class teacher can manage students in this class");
+      }
+    }
+
+    const id = data.id || `st-${data.admissionNo.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+    const row = {
+      id,
+      admission_no: data.admissionNo,
+      full_name: data.fullName,
+      gender: data.gender,
+      dob: data.dob ? data.dob : null,
+      class_id: data.classId,
+      parent_name: data.parentName || null,
+      parent_phone: data.parentPhone || null,
+      address: data.address || null,
+    };
+
+    const { error } = await context.supabase.from("students").upsert(row, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+    return { id };
+  });
+
+const contactSchema = z.object({
+  parentPhone: z.string().trim().max(40).optional().or(z.literal("")),
+  address: z.string().trim().max(240).optional().or(z.literal("")),
+});
+
+/** A signed-in student updates their own contact details. */
+export const updateMyContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => contactSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: profile } = await context.supabase
+      .from("profiles")
+      .select("admission_no")
+      .eq("id", context.userId)
+      .maybeSingle();
+
+    const { data: student } = await context.supabase
+      .from("students")
+      .select("id")
+      .or(
+        profile?.admission_no
+          ? `user_id.eq.${context.userId},admission_no.eq.${profile.admission_no}`
+          : `user_id.eq.${context.userId}`,
+      )
+      .maybeSingle();
+    if (!student) throw new Error("No student record is linked to your account");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("students")
+      .update({
+        parent_phone: data.parentPhone || null,
+        address: data.address || null,
+        user_id: context.userId,
+      })
+      .eq("id", student.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
   });
