@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
-import { USERS, type User, type Role } from "./mock-data";
+import type { User, Role } from "./mock-data";
 
 interface AuthCtx {
   user: User;
@@ -36,24 +36,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const uid = sess.user.id;
       const email = sess.user.email ?? "";
 
-      const [{ data: profile }, { data: roleRows }] = await Promise.all([
-        supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
-        supabase.from("user_roles").select("role").eq("user_id", uid),
-      ]);
+      const [{ data: profile }, { data: roleRows }, { data: myClasses }, { data: mySubjects }] =
+        await Promise.all([
+          supabase.from("profiles").select("*").eq("id", uid).maybeSingle(),
+          supabase.from("user_roles").select("role").eq("user_id", uid),
+          supabase.from("classes").select("id").eq("class_teacher_id", uid),
+          supabase.from("subjects").select("id").eq("teacher_id", uid),
+        ]);
 
       const role: Role = (roleRows?.[0]?.role as Role) ?? "student";
-      const mock = USERS.find((u) => u.email.toLowerCase() === email.toLowerCase());
+
+      // Link the signed-in account to its student record (by user_id, else admission no.)
+      let studentId: string | undefined;
+      if (role === "student") {
+        const byUser = await supabase.from("students").select("id").eq("user_id", uid).maybeSingle();
+        studentId = byUser.data?.id;
+        if (!studentId && profile?.admission_no) {
+          const byAdm = await supabase
+            .from("students")
+            .select("id")
+            .eq("admission_no", profile.admission_no)
+            .maybeSingle();
+          studentId = byAdm.data?.id;
+        }
+      }
 
       const composed: User = {
         id: uid,
-        name: profile?.full_name || mock?.name || email.split("@")[0],
+        name: profile?.full_name || email.split("@")[0],
         email,
         role,
-        staffId: profile?.staff_id ?? mock?.staffId ?? undefined,
-        classIds: mock?.classIds,
-        subjectIds: mock?.subjectIds,
-        studentId: mock?.studentId,
+        staffId: profile?.staff_id ?? undefined,
+        classIds: (myClasses ?? []).map((c) => c.id),
+        subjectIds: (mySubjects ?? []).map((s) => s.id),
+        studentId,
       };
+
       if (mounted) {
         setUser(composed);
         setReady(true);

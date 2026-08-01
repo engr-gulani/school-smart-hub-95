@@ -3,14 +3,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Bell, CheckCircle2, Megaphone, KeyRound, CalendarDays } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { NOTIFICATIONS, STUDENTS, type Notification } from "@/lib/mock-data";
+import { SCHOOL } from "@/lib/mock-data";
+import { useAcademics, stageFor, STAGE_LABEL } from "@/lib/use-academics";
 
 export const Route = createFileRoute("/_app/notifications")({
-  head: () => ({ meta: [{ title: "Notifications · Student portal" }] }),
+  head: () => ({
+    meta: [
+      { title: "Notifications · Greenfield College Portal" },
+      { name: "description", content: "Result updates, announcements and account activity for students." },
+    ],
+  }),
   component: NotificationsPage,
 });
 
-const ICON: Record<Notification["kind"], React.ComponentType<{ className?: string }>> = {
+type Kind = "result" | "term" | "announcement" | "password" | "attendance";
+
+const ICON: Record<Kind, React.ComponentType<{ className?: string }>> = {
   result: CheckCircle2,
   term: CalendarDays,
   announcement: Megaphone,
@@ -18,17 +26,69 @@ const ICON: Record<Notification["kind"], React.ComponentType<{ className?: strin
   attendance: Bell,
 };
 
+function timeAgo(iso: string | null | undefined) {
+  if (!iso) return "";
+  const diff = Date.now() - new Date(iso).getTime();
+  const h = Math.floor(diff / 3_600_000);
+  if (h < 1) return "Just now";
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  return d === 1 ? "Yesterday" : `${d}d ago`;
+}
+
 function NotificationsPage() {
   const { user } = useAuth();
-  if (user.role !== "student" || !user.studentId) return <Navigate to="/dashboard" />;
-  const student = STUDENTS.find((s) => s.id === user.studentId)!;
+  const { data, isLoading } = useAcademics();
 
-  const visible = NOTIFICATIONS.filter((n) => {
-    if (!n.scope || n.scope === "all") return true;
-    if (n.scope === "class") return n.classId === student.classId;
-    if (n.scope === "student") return true;
-    return false;
-  });
+  if (user.role !== "student") return <Navigate to="/dashboard" />;
+
+  const student = (data?.students ?? []).find((s) => s.id === user.studentId || s.userId === user.id);
+
+  if (isLoading) {
+    return <div className="text-muted-foreground py-16 text-center text-sm">Loading notifications…</div>;
+  }
+  if (!student) {
+    return (
+      <div className="text-muted-foreground py-16 text-center text-sm">
+        No student record linked to this account. Please contact the administrator.
+      </div>
+    );
+  }
+
+  const cls = (data?.classes ?? []).find((c) => c.id === student.classId);
+  const approval = (data?.approvals ?? []).find((a) => a.classId === student.classId) as
+    | { publishedAt?: string | null; submittedAt?: string | null }
+    | undefined;
+  const stage = stageFor(data, student.classId);
+  const published = stage === "published";
+
+  const items: { id: string; title: string; body: string; when: string; kind: Kind }[] = [
+    {
+      id: "result",
+      title: published ? `${SCHOOL.term} results published` : `${SCHOOL.term} results in progress`,
+      body: published
+        ? "Your results are now available. Open My Results to view or download your report card."
+        : STAGE_LABEL[stage],
+      when: timeAgo(approval?.publishedAt ?? approval?.submittedAt) || "This term",
+      kind: "result",
+    },
+    {
+      id: "class",
+      title: `You are enrolled in ${cls?.name ?? student.classId}`,
+      body: cls?.classTeacherName
+        ? `Your class teacher is ${cls.classTeacherName}.`
+        : "A class teacher has not been assigned to your class yet.",
+      when: "This term",
+      kind: "announcement",
+    },
+    {
+      id: "term",
+      title: "Next term",
+      body: `Second Term begins ${SCHOOL.nextTermBegins}. Please settle school fees before resumption.`,
+      when: "Upcoming",
+      kind: "term",
+    },
+  ];
 
   return (
     <div className="space-y-5">
@@ -37,7 +97,7 @@ function NotificationsPage() {
         <p className="text-muted-foreground text-sm">Announcements, result updates and account activity.</p>
       </div>
       <div className="space-y-3">
-        {visible.map((n) => {
+        {items.map((n) => {
           const Icon = ICON[n.kind];
           return (
             <Card key={n.id} className="shadow-card">
@@ -48,7 +108,9 @@ function NotificationsPage() {
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-semibold">{n.title}</p>
-                    <Badge variant="secondary" className="text-[10px] uppercase">{n.kind}</Badge>
+                    <Badge variant="secondary" className="text-[10px] uppercase">
+                      {n.kind}
+                    </Badge>
                   </div>
                   <p className="text-muted-foreground mt-1 text-sm">{n.body}</p>
                   <p className="text-muted-foreground mt-1 text-xs">{n.when}</p>

@@ -18,20 +18,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth, can } from "@/lib/auth-context";
+import { SCHOOL, ordinal, attendanceFor } from "@/lib/mock-data";
 import {
-  CLASSES,
-  NOTIFICATIONS,
-  PUBLISHED_CLASS_IDS,
-  SCHOOL,
-  STUDENTS,
-  SUBJECTS,
-  USERS,
-  SCORES,
-  attendanceFor,
-  classBroadsheet,
+  useAcademics,
+  buildBroadsheet,
   gradeFor,
-  ordinal,
-} from "@/lib/mock-data";
+  stageFor,
+  STAGE_LABEL,
+  type Academics,
+} from "@/lib/use-academics";
 
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
@@ -45,20 +40,39 @@ export const Route = createFileRoute("/_app/dashboard")({
 
 function Dashboard() {
   const { user } = useAuth();
+  const { data, isLoading } = useAcademics();
 
-  if (user.role === "student") return <StudentDashboard />;
+  if (user.role === "student") return <StudentDashboard data={data} isLoading={isLoading} />;
 
-  const teacherCount = USERS.filter((u) => u.role === "subject_teacher" || u.role === "class_teacher").length;
+  const classes = data?.classes ?? [];
+  const subjects = data?.subjects ?? [];
+  const students = data?.students ?? [];
+  const scores = data?.scores ?? [];
+  const staff = data?.staff ?? [];
+
+  const teacherCount = staff.filter(
+    (s) => s.role === "subject_teacher" || s.role === "class_teacher",
+  ).length;
   const isTeacherView = user.role === "subject_teacher" || user.role === "class_teacher";
 
-  const assignedSubjects = SUBJECTS.filter(
-    (s) => user.subjectIds?.includes(s.id) || (user.role === "class_teacher" && user.classIds?.includes(s.classId)),
+  const assignedSubjects = subjects.filter(
+    (s) => s.teacherId === user.id || (user.role === "class_teacher" && (user.classIds ?? []).includes(s.classId)),
   );
-  const assignedClasses = CLASSES.filter((c) => user.classIds?.includes(c.id));
-  const studentsInScope = isTeacherView
-    ? STUDENTS.filter((st) => assignedSubjects.some((sub) => sub.classId === st.classId))
-    : STUDENTS;
+  const assignedClasses = classes.filter((c) => c.classTeacherId === user.id);
+  const scopeClassIds = new Set([
+    ...assignedSubjects.map((s) => s.classId),
+    ...assignedClasses.map((c) => c.id),
+  ]);
+  const studentsInScope = isTeacherView ? students.filter((st) => scopeClassIds.has(st.classId)) : students;
 
+  const pendingUploads = assignedSubjects.filter((sub) => {
+    const roster = students.filter((st) => st.classId === sub.classId);
+    const entered = scores.filter((sc) => sc.subjectId === sub.id).length;
+    return roster.length > 0 && entered < roster.length;
+  });
+
+  const snapshotClassId = (isTeacherView ? [...scopeClassIds][0] : undefined) ?? classes[0]?.id ?? "";
+  const snapshotClass = classes.find((c) => c.id === snapshotClassId);
 
   return (
     <div className="space-y-6">
@@ -69,9 +83,11 @@ function Dashboard() {
           </p>
           <h1 className="font-display text-3xl font-semibold">Welcome back, {user.name.split(" ").slice(-1)[0]}.</h1>
           <p className="text-muted-foreground text-sm">
-            {isTeacherView
-              ? "Here are your assigned subjects and pending score uploads."
-              : "Here's the pulse of the school this term."}
+            {isLoading
+              ? "Loading live school data…"
+              : isTeacherView
+                ? "Here are your assigned subjects and pending score uploads."
+                : "Here's the pulse of the school this term."}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -91,16 +107,22 @@ function Dashboard() {
       {isTeacherView ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <StatCard label="Assigned Subjects" value={assignedSubjects.length} icon={BookOpen} />
-          <StatCard label="Assigned Classes" value={assignedClasses.length || new Set(assignedSubjects.map((s) => s.classId)).size} icon={SchoolIcon} accent="success" />
+          <StatCard label="Assigned Classes" value={scopeClassIds.size} icon={SchoolIcon} accent="success" />
           <StatCard label="Students in scope" value={studentsInScope.length} icon={Users} accent="muted" />
-          <StatCard label="Pending uploads" value={2} hint="Awaiting CA2 for MTH SS1A" icon={ClipboardCheck} accent="warning" />
+          <StatCard
+            label="Pending uploads"
+            value={pendingUploads.length}
+            hint={pendingUploads[0] ? `Incomplete: ${pendingUploads[0].code}` : "All scores entered"}
+            icon={ClipboardCheck}
+            accent="warning"
+          />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Total Students" value={STUDENTS.length} icon={Users} />
+          <StatCard label="Total Students" value={students.length} icon={Users} />
           <StatCard label="Teachers" value={teacherCount} icon={GraduationCap} accent="success" />
-          <StatCard label="Classes" value={CLASSES.length} icon={SchoolIcon} accent="muted" />
-          <StatCard label="Subjects" value={SUBJECTS.length} icon={BookOpen} accent="warning" />
+          <StatCard label="Classes" value={classes.length} icon={SchoolIcon} accent="muted" />
+          <StatCard label="Subjects" value={subjects.length} icon={BookOpen} accent="warning" />
         </div>
       )}
 
@@ -108,45 +130,44 @@ function Dashboard() {
         <Card className="shadow-card lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-base">SS 1A · Live broadsheet snapshot</CardTitle>
-              <p className="text-muted-foreground mt-1 text-xs">Auto-computed totals & positions</p>
+              <CardTitle className="text-base">
+                {snapshotClass?.name ?? "Class"} · Live broadsheet snapshot
+              </CardTitle>
+              <p className="text-muted-foreground mt-1 text-xs">Auto-computed totals & positions from the database</p>
             </div>
             <Link to="/results" className="text-primary text-xs font-medium hover:underline">
               View full broadsheet →
             </Link>
           </CardHeader>
           <CardContent>
-            <SnapshotBroadsheet />
+            <SnapshotBroadsheet data={data} classId={snapshotClassId} />
           </CardContent>
         </Card>
 
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Bell className="h-4 w-4" /> Recent activity
+              <Bell className="h-4 w-4" /> Result workflow
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            {[
-              { who: "Mr. John", what: "uploaded MTH SS1A exam scores", when: "2h ago", icon: ClipboardCheck },
-              { who: "Mrs. Grace", what: "approved SS1A CA results", when: "5h ago", icon: FileCheck2 },
-              { who: "Principal", what: "published SS2A first term results", when: "Yesterday", icon: TrendingUp },
-              { who: "Admin", what: "registered 3 new students in JSS1A", when: "2d ago", icon: Users },
-            ].map((a, i) => (
-              <div key={i} className="flex items-start gap-3">
-                <div className="bg-accent text-accent-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-                  <a.icon className="h-4 w-4" />
+            {classes.slice(0, 6).map((c) => {
+              const stage = stageFor(data, c.id);
+              const Icon = stage === "published" ? TrendingUp : stage === "draft" ? ClipboardCheck : FileCheck2;
+              return (
+                <div key={c.id} className="flex items-start gap-3">
+                  <div className="bg-accent text-accent-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+                    <Icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-foreground font-medium">{c.name}</p>
+                    <p className="text-muted-foreground text-xs">{STAGE_LABEL[stage]}</p>
+                  </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-foreground">
-                    <span className="font-medium">{a.who}</span> {a.what}
-                  </p>
-                  <p className="text-muted-foreground text-xs">{a.when}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
             <p className="text-muted-foreground pt-2 text-[11px]">
-              {SCORES.length} score entries recorded this term.
+              {scores.length} score entries recorded this term.
             </p>
           </CardContent>
         </Card>
@@ -155,9 +176,12 @@ function Dashboard() {
   );
 }
 
-function SnapshotBroadsheet() {
-  const { subjects, rows } = classBroadsheet("c-ss1a");
+function SnapshotBroadsheet({ data, classId }: { data: Academics | undefined; classId: string }) {
+  const { subjects, rows } = buildBroadsheet(data, classId);
   const top = rows.slice(0, 5);
+  if (top.length === 0) {
+    return <p className="text-muted-foreground py-8 text-center text-sm">No results recorded for this class yet.</p>;
+  }
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
@@ -194,9 +218,13 @@ function SnapshotBroadsheet() {
   );
 }
 
-function StudentDashboard() {
+function StudentDashboard({ data, isLoading }: { data: Academics | undefined; isLoading: boolean }) {
   const { user } = useAuth();
-  const student = STUDENTS.find((s) => s.id === user.studentId);
+  const student = (data?.students ?? []).find((s) => s.id === user.studentId || s.userId === user.id);
+
+  if (isLoading) {
+    return <div className="text-muted-foreground py-16 text-center text-sm">Loading your portal…</div>;
+  }
   if (!student) {
     return (
       <div className="py-16 text-center text-sm text-muted-foreground">
@@ -204,15 +232,13 @@ function StudentDashboard() {
       </div>
     );
   }
-  const cls = CLASSES.find((c) => c.id === student.classId)!;
+  const cls = (data?.classes ?? []).find((c) => c.id === student.classId);
   const attendance = attendanceFor(student.id);
-  const published = PUBLISHED_CLASS_IDS.includes(cls.id);
-  const { rows } = classBroadsheet(cls.id);
+  const stage = stageFor(data, student.classId);
+  const published = stage === "published";
+  const { rows } = buildBroadsheet(data, student.classId);
   const myRow = rows.find((r) => r.student.id === student.id);
-  const classSubjects = SUBJECTS.filter((s) => s.classId === cls.id);
-  const recentNotifications = NOTIFICATIONS.filter(
-    (n) => !n.scope || n.scope === "all" || (n.scope === "class" && n.classId === cls.id) || n.scope === "student",
-  ).slice(0, 4);
+  const classSubjects = (data?.subjects ?? []).filter((s) => s.classId === student.classId);
   const initials = student.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
   const attendancePct = Math.round((attendance.present / attendance.total) * 100);
 
@@ -233,7 +259,9 @@ function StudentDashboard() {
           </div>
           <div className="flex-1">
             <p className="font-display text-lg font-semibold">{student.name}</p>
-            <p className="text-muted-foreground text-sm">{cls.name} · {student.gender}</p>
+            <p className="text-muted-foreground text-sm">
+              {cls?.name ?? student.classId} · {student.gender}
+            </p>
             <p className="text-muted-foreground font-mono text-xs">{student.admissionNo}</p>
           </div>
           <Badge variant="secondary" className="w-fit">
@@ -255,7 +283,7 @@ function StudentDashboard() {
             <div>
               <CardTitle className="text-base">Latest results</CardTitle>
               <p className="text-muted-foreground mt-1 text-xs">
-                {published ? "Published · First Term" : "Awaiting publication by the Principal"}
+                {published ? `Published · ${SCHOOL.term}` : STAGE_LABEL[stage]}
               </p>
             </div>
             {published && (
@@ -309,18 +337,17 @@ function StudentDashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">
-            {recentNotifications.map((n) => (
-              <div key={n.id} className="flex items-start gap-3">
-                <div className="bg-accent text-accent-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-                  <Bell className="h-4 w-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-foreground font-medium">{n.title}</p>
-                  <p className="text-muted-foreground truncate text-xs">{n.body}</p>
-                  <p className="text-muted-foreground text-[11px]">{n.when}</p>
-                </div>
+            <div className="flex items-start gap-3">
+              <div className="bg-accent text-accent-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
+                <Bell className="h-4 w-4" />
               </div>
-            ))}
+              <div className="min-w-0 flex-1">
+                <p className="text-foreground font-medium">
+                  {published ? "Results published" : "Results pending"}
+                </p>
+                <p className="text-muted-foreground text-xs">{STAGE_LABEL[stage]}</p>
+              </div>
+            </div>
             <Link to="/notifications" className="text-primary block pt-1 text-xs font-medium hover:underline">
               View all notifications →
             </Link>
@@ -330,4 +357,3 @@ function StudentDashboard() {
     </div>
   );
 }
-
