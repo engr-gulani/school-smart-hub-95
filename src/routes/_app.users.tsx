@@ -17,7 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth, ROLE_LABEL, can } from "@/lib/auth-context";
-import { CLASSES, type Role } from "@/lib/mock-data";
+import { type Role } from "@/lib/mock-data";
+import { useAcademics } from "@/lib/use-academics";
 import { createPortalUser, listPortalUsers } from "@/lib/user-admin.functions";
 
 export const Route = createFileRoute("/_app/users")({
@@ -70,6 +71,8 @@ function randomPassword() {
 function UsersPage() {
   const { user } = useAuth();
   const isAdmin = can(user.role, "manage_school");
+  const { data: academics } = useAcademics();
+  const classes = academics?.classes ?? [];
   const queryClient = useQueryClient();
   const [form, setForm] = useState(emptyForm);
 
@@ -199,7 +202,7 @@ function UsersPage() {
                         <SelectValue placeholder="Select a class" />
                       </SelectTrigger>
                       <SelectContent>
-                        {CLASSES.map((c) => (
+                        {classes.map((c) => (
                           <SelectItem key={c.id} value={c.id}>
                             {c.name}
                           </SelectItem>
