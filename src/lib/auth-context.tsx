@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
-import { USERS, type User, type Role } from "./mock-data";
+import type { User, Role } from "./mock-data";
 
 interface AuthCtx {
   user: User;
