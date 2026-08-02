@@ -37,6 +37,7 @@ function ResultsPage() {
   const [classId, setClassId] = useState("c-ss1a");
   const [busy, setBusy] = useState(false);
 
+  const canSeeReports = user.role !== "subject_teacher";
   const stage = stageFor(data, classId);
   const { subjects, rows } = useMemo(() => buildBroadsheet(data, classId), [data, classId]);
 
@@ -79,11 +80,13 @@ function ResultsPage() {
               ))}
             </SelectContent>
           </Select>
+          {canSeeReports && (
           <Link to="/report-cards/$classId" params={{ classId }} search={{ print: "1" }} target="_blank">
             <Button size="sm" className="gap-2">
               <Download className="h-4 w-4" /> Download all report cards (PDF)
             </Button>
           </Link>
+          )}
           <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
             <Printer className="h-4 w-4" /> Print
           </Button>
@@ -218,11 +221,13 @@ function ResultsPage() {
                     </td>
                     <td className="py-2 pr-3 text-right tabular-nums">{r.position}</td>
                     <td className="py-2 text-right">
+                      {canSeeReports && (
                       <Link to="/report-card/$studentId" params={{ studentId: r.student.id }}>
                         <Button size="sm" variant="ghost" className="gap-1">
                           <FileText className="h-3.5 w-3.5" />
                         </Button>
                       </Link>
+                      )}
                     </td>
                   </tr>
                 );

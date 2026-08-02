@@ -83,3 +83,22 @@ export const createPortalUser = createServerFn({ method: "POST" })
 
     return { id: created.user?.id, email: data.email, role: data.role };
   });
+
+const resetPasswordSchema = z.object({
+  userId: z.string().uuid(),
+  password: z.string().min(8).max(72),
+});
+
+/** Admin-only password reset — users (including students) cannot change their own password. */
+export const resetUserPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => resetPasswordSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      password: data.password,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

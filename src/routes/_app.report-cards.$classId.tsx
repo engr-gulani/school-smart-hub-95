@@ -37,9 +37,19 @@ function BulkReportCards() {
     return;
   }, [isLoading, autoPrint, rows.length]);
 
-  if (user.role === "student") {
-    return <p className="text-muted-foreground py-16 text-center text-sm">Not available for student accounts.</p>;
+  if (user.role === "student" || user.role === "subject_teacher") {
+    return (
+      <p className="text-muted-foreground py-16 text-center text-sm">
+        Report cards are not available for this account type.
+      </p>
+    );
   }
+
+  const editable =
+    user.role === "class_teacher" ||
+    user.role === "principal" ||
+    user.role === "school_admin" ||
+    user.role === "super_admin";
   if (isLoading) return <p className="text-muted-foreground py-16 text-center text-sm">Preparing report cards…</p>;
 
   return (
@@ -74,6 +84,7 @@ function BulkReportCards() {
               total={r.total}
               average={r.average}
               position={r.position}
+              editable={editable}
             />
           ))}
         </div>
