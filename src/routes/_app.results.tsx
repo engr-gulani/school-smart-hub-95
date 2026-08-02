@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileCheck2, FileText, Printer, CheckCircle2, Circle, Undo2 } from "lucide-react";
+import { FileCheck2, FileText, Printer, CheckCircle2, Circle, Undo2, Download } from "lucide-react";
 import { useAuth, can } from "@/lib/auth-context";
 import { updateResultApproval } from "@/lib/academics.functions";
 import {
