@@ -19,7 +19,7 @@ import {
 import { useAuth, ROLE_LABEL, can } from "@/lib/auth-context";
 import { type Role } from "@/lib/mock-data";
 import { useAcademics } from "@/lib/use-academics";
-import { createPortalUser, listPortalUsers } from "@/lib/user-admin.functions";
+import { createPortalUser, listPortalUsers, resetUserPassword } from "@/lib/user-admin.functions";
 
 export const Route = createFileRoute("/_app/users")({
   head: () => ({
@@ -78,6 +78,25 @@ function UsersPage() {
 
   const fetchUsers = useServerFn(listPortalUsers);
   const createUser = useServerFn(createPortalUser);
+  const resetPassword = useServerFn(resetUserPassword);
+  const [resetId, setResetId] = useState<string | null>(null);
+  const [resetPw, setResetPw] = useState("");
+  const [resetting, setResetting] = useState(false);
+
+  const submitReset = async (userId: string) => {
+    if (resetPw.length < 8) return toast.error("Password must be at least 8 characters");
+    setResetting(true);
+    try {
+      await resetPassword({ data: { userId, password: resetPw } });
+      toast.success("Password reset");
+      setResetId(null);
+      setResetPw("");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not reset password");
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const usersQuery = useQuery({
     queryKey: ["portal-users"],
@@ -276,6 +295,7 @@ function UsersPage() {
                       <th className="py-2 font-medium">Email</th>
                       <th className="py-2 font-medium">Role</th>
                       <th className="py-2 font-medium">ID</th>
+                      <th className="py-2 text-right font-medium">Password</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -291,11 +311,48 @@ function UsersPage() {
                         <td className="text-muted-foreground py-2 font-mono text-xs">
                           {u.staff_id || u.admission_no || "—"}
                         </td>
+                        <td className="py-2 text-right">
+                          {resetId === u.id ? (
+                            <div className="flex items-center justify-end gap-2">
+                              <Input
+                                type="text"
+                                value={resetPw}
+                                onChange={(e) => setResetPw(e.target.value)}
+                                placeholder="New password"
+                                className="h-8 w-40"
+                              />
+                              <Button size="sm" disabled={resetting} onClick={() => submitReset(u.id)}>
+                                Save
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setResetId(null);
+                                  setResetPw("");
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setResetId(u.id);
+                                setResetPw("");
+                              }}
+                            >
+                              Reset password
+                            </Button>
+                          )}
+                        </td>
                       </tr>
                     ))}
                     {(usersQuery.data ?? []).length === 0 && (
                       <tr>
-                        <td colSpan={4} className="text-muted-foreground py-8 text-center">
+                        <td colSpan={5} className="text-muted-foreground py-8 text-center">
                           No accounts yet.
                         </td>
                       </tr>
