@@ -150,36 +150,13 @@ function MyProfile() {
 
       <Card className="shadow-card">
         <CardHeader>
-          <CardTitle className="text-base">Change password</CardTitle>
+          <CardTitle className="text-base">Password</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={changePassword} className="grid gap-3 md:grid-cols-3">
-            <div className="space-y-1">
-              <Label htmlFor="next">New password</Label>
-              <Input
-                id="next"
-                type="password"
-                value={pw.next}
-                onChange={(e) => setPw({ ...pw, next: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="confirm">Confirm new password</Label>
-              <Input
-                id="confirm"
-                type="password"
-                value={pw.confirm}
-                onChange={(e) => setPw({ ...pw, confirm: e.target.value })}
-                required
-              />
-            </div>
-            <div className="flex items-end">
-              <Button type="submit" size="sm">
-                Update password
-              </Button>
-            </div>
-          </form>
+          <p className="text-muted-foreground text-sm">
+            For security reasons, students cannot change their own password. Please contact the school
+            administrator to have your password reset.
+          </p>
         </CardContent>
       </Card>
     </div>
