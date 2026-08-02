@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Sparkles } from "lucide-react";
 import { SCHOOL, ordinal } from "@/lib/mock-data";
@@ -11,11 +12,114 @@ interface Props {
   total: number;
   average: number;
   position: number;
+  /** When true, comments, signatures and behavioural ratings can be edited. */
+  editable?: boolean;
+}
+
+export const AFFECTIVE_TRAITS = [
+  "Punctuality",
+  "Neatness",
+  "Politeness",
+  "Honesty",
+  "Attentiveness in class",
+  "Relationship with others",
+  "Self control",
+] as const;
+
+export const ACTIVITY_TRAITS = [
+  "Sports / games",
+  "Handwriting",
+  "Musical skills",
+  "Drawing & painting",
+  "Club / society participation",
+  "Leadership",
+] as const;
+
+export const RATING_SCALE: { value: number; label: string }[] = [
+  { value: 5, label: "Excellent" },
+  { value: 4, label: "Very good" },
+  { value: 3, label: "Good" },
+  { value: 2, label: "Fair" },
+  { value: 1, label: "Needs improvement" },
+];
+
+export const ACADEMIC_GRADE_SCALE = [
+  { grade: "A", range: "75 – 100", remark: "Excellent" },
+  { grade: "B", range: "65 – 74", remark: "Very good" },
+  { grade: "C", range: "55 – 64", remark: "Good" },
+  { grade: "D", range: "45 – 54", remark: "Pass" },
+  { grade: "E", range: "40 – 44", remark: "Fair" },
+  { grade: "F", range: "0 – 39", remark: "Fail" },
+];
+
+interface Assessment {
+  affective: Record<string, number>;
+  activities: Record<string, number>;
+  teacherComment: string;
+  teacherName: string;
+  teacherSign: string;
+  principalComment: string;
+  principalName: string;
+  principalSign: string;
+}
+
+const DEFAULTS: Assessment = {
+  affective: {},
+  activities: {},
+  teacherComment:
+    "A diligent student with steady improvement across core subjects. Keep up the reading habit.",
+  teacherName: "Mrs. Grace Adewale",
+  teacherSign: "G. Adewale",
+  principalComment: "Very good performance this term. Aim higher next term — we believe in you.",
+  principalName: "Mr. Samuel Okoro",
+  principalSign: "S. Okoro",
+};
+
+function storageKey(studentId: string) {
+  return `report-card:${studentId}`;
+}
+
+function useAssessment(studentId: string) {
+  const [state, setState] = useState<Assessment>(DEFAULTS);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(storageKey(studentId));
+      setState(raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<Assessment>) } : DEFAULTS);
+    } catch {
+      setState(DEFAULTS);
+    }
+  }, [studentId]);
+
+  const update = (patch: Partial<Assessment>) => {
+    setState((prev) => {
+      const next = { ...prev, ...patch };
+      try {
+        window.localStorage.setItem(storageKey(studentId), JSON.stringify(next));
+      } catch {
+        /* ignore quota errors */
+      }
+      return next;
+    });
+  };
+
+  return { state, update };
 }
 
 /** A single printable A4 report card sheet. */
-export function ReportCardSheet({ student, data, className, subjects, total, average, position }: Props) {
+export function ReportCardSheet({
+  student,
+  data,
+  className,
+  subjects,
+  total,
+  average,
+  position,
+  editable = false,
+}: Props) {
   const SCORES = data.scores;
+  const { state, update } = useAssessment(student.id);
 
   return (
     <article className="bg-card text-card-foreground shadow-card mx-auto max-w-[860px] rounded-xl border p-8 print:break-after-page print:border-0 print:shadow-none">
@@ -88,15 +192,87 @@ export function ReportCardSheet({ student, data, className, subjects, total, ave
       </section>
 
       <section className="mt-6 grid gap-4 md:grid-cols-2">
+        <RatingTable
+          title="Affective assessment"
+          traits={AFFECTIVE_TRAITS as unknown as string[]}
+          values={state.affective}
+          editable={editable}
+          onChange={(trait, value) => update({ affective: { ...state.affective, [trait]: value } })}
+        />
+        <RatingTable
+          title="Activities / psychomotor skills"
+          traits={ACTIVITY_TRAITS as unknown as string[]}
+          values={state.activities}
+          editable={editable}
+          onChange={(trait, value) => update({ activities: { ...state.activities, [trait]: value } })}
+        />
+      </section>
+
+      <section className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg border p-4">
+          <p className="text-muted-foreground text-[10px] uppercase tracking-widest">Academic grade scale</p>
+          <table className="mt-2 w-full text-xs">
+            <thead className="text-muted-foreground">
+              <tr>
+                <th className="py-1 text-left font-medium">Grade</th>
+                <th className="py-1 text-left font-medium">Score range</th>
+                <th className="py-1 text-left font-medium">Remark</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ACADEMIC_GRADE_SCALE.map((g) => (
+                <tr key={g.grade} className="border-t">
+                  <td className="py-1 font-semibold">{g.grade}</td>
+                  <td className="py-1 tabular-nums">{g.range}</td>
+                  <td className="text-muted-foreground py-1">{g.remark}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="rounded-lg border p-4">
+          <p className="text-muted-foreground text-[10px] uppercase tracking-widest">
+            Behavioural rating scale
+          </p>
+          <ul className="mt-2 space-y-1 text-xs">
+            {RATING_SCALE.map((r) => (
+              <li key={r.value} className="flex items-center justify-between border-t py-1 first:border-0">
+                <span className="font-semibold tabular-nums">{r.value}</span>
+                <span className="text-muted-foreground">{r.label}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="mt-6 grid gap-4 md:grid-cols-2">
         <Comment
           title="Class teacher's comment"
-          body="A diligent student with steady improvement across core subjects. Keep up the reading habit."
-          signer="Mrs. Grace Adewale"
+          body={state.teacherComment}
+          name={state.teacherName}
+          sign={state.teacherSign}
+          editable={editable}
+          onChange={(patch) =>
+            update({
+              teacherComment: patch.body ?? state.teacherComment,
+              teacherName: patch.name ?? state.teacherName,
+              teacherSign: patch.sign ?? state.teacherSign,
+            })
+          }
         />
         <Comment
           title="Principal's comment"
-          body="Very good performance this term. Aim higher next term — we believe in you."
-          signer="Mr. Samuel Okoro"
+          body={state.principalComment}
+          name={state.principalName}
+          sign={state.principalSign}
+          editable={editable}
+          onChange={(patch) =>
+            update({
+              principalComment: patch.body ?? state.principalComment,
+              principalName: patch.name ?? state.principalName,
+              principalSign: patch.sign ?? state.principalSign,
+            })
+          }
         />
       </section>
 
@@ -125,6 +301,67 @@ export function ReportCardSheet({ student, data, className, subjects, total, ave
   );
 }
 
+function RatingTable({
+  title,
+  traits,
+  values,
+  editable,
+  onChange,
+}: {
+  title: string;
+  traits: string[];
+  values: Record<string, number>;
+  editable: boolean;
+  onChange: (trait: string, value: number) => void;
+}) {
+  return (
+    <div className="rounded-lg border p-4">
+      <p className="text-muted-foreground text-[10px] uppercase tracking-widest">{title}</p>
+      <table className="mt-2 w-full text-xs">
+        <thead className="text-muted-foreground">
+          <tr>
+            <th className="py-1 text-left font-medium">Trait</th>
+            {RATING_SCALE.map((r) => (
+              <th key={r.value} className="w-6 py-1 text-center font-medium tabular-nums">
+                {r.value}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {traits.map((trait) => {
+            const current = values[trait] ?? 0;
+            return (
+              <tr key={trait} className="border-t">
+                <td className="py-1 pr-2">{trait}</td>
+                {RATING_SCALE.map((r) => (
+                  <td key={r.value} className="py-1 text-center">
+                    {editable ? (
+                      <button
+                        type="button"
+                        aria-label={`${trait}: ${r.label}`}
+                        onClick={() => onChange(trait, r.value)}
+                        className={`mx-auto grid h-4 w-4 place-items-center rounded-sm border print:hidden ${
+                          current === r.value ? "bg-primary border-primary text-primary-foreground" : ""
+                        }`}
+                      >
+                        {current === r.value ? "✓" : ""}
+                      </button>
+                    ) : null}
+                    <span className={editable ? "hidden print:inline" : ""}>
+                      {current === r.value ? "✓" : "—"}
+                    </span>
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
@@ -147,12 +384,57 @@ function Metric({ label, value, accent }: { label: string; value: string | numbe
   );
 }
 
-function Comment({ title, body, signer }: { title: string; body: string; signer: string }) {
+function Comment({
+  title,
+  body,
+  name,
+  sign,
+  editable,
+  onChange,
+}: {
+  title: string;
+  body: string;
+  name: string;
+  sign: string;
+  editable: boolean;
+  onChange: (patch: { body?: string; name?: string; sign?: string }) => void;
+}) {
   return (
     <div className="rounded-lg border p-4">
       <p className="text-muted-foreground text-[10px] uppercase tracking-widest">{title}</p>
-      <p className="mt-2 text-sm leading-relaxed">{body}</p>
-      <p className="text-muted-foreground mt-4 border-t pt-2 text-xs italic">— {signer}</p>
+      {editable ? (
+        <textarea
+          value={body}
+          onChange={(e) => onChange({ body: e.target.value })}
+          rows={3}
+          className="border-input bg-background focus-visible:ring-ring mt-2 w-full resize-y rounded-md border p-2 text-sm leading-relaxed focus-visible:outline-none focus-visible:ring-1 print:resize-none print:border-0 print:p-0"
+        />
+      ) : (
+        <p className="mt-2 text-sm leading-relaxed">{body}</p>
+      )}
+      <div className="mt-4 flex items-end justify-between gap-3 border-t pt-2">
+        {editable ? (
+          <>
+            <input
+              value={name}
+              onChange={(e) => onChange({ name: e.target.value })}
+              placeholder="Name"
+              className="border-input bg-background w-1/2 rounded-md border px-2 py-1 text-xs print:border-0 print:px-0"
+            />
+            <input
+              value={sign}
+              onChange={(e) => onChange({ sign: e.target.value })}
+              placeholder="Signature"
+              className="border-input bg-background w-1/2 rounded-md border px-2 py-1 text-right text-xs italic print:border-0 print:px-0"
+            />
+          </>
+        ) : (
+          <>
+            <span className="text-muted-foreground text-xs">— {name}</span>
+            <span className="text-xs italic">{sign}</span>
+          </>
+        )}
+      </div>
     </div>
   );
 }
