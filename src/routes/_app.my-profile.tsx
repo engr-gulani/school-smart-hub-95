@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useAcademics, useRefreshAcademics } from "@/lib/use-academics";
 import { updateMyContact } from "@/lib/academics.functions";
@@ -32,7 +31,6 @@ function MyProfile() {
 
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [pw, setPw] = useState({ next: "", confirm: "" });
 
   useEffect(() => {
     if (student) {
@@ -49,16 +47,6 @@ function MyProfile() {
     },
     onError: (e: Error) => toast.error(e.message),
   });
-
-  const changePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pw.next.length < 8) return toast.error("New password must be at least 8 characters");
-    if (pw.next !== pw.confirm) return toast.error("Passwords do not match");
-    const { error } = await supabase.auth.updateUser({ password: pw.next });
-    if (error) return toast.error(error.message);
-    setPw({ next: "", confirm: "" });
-    toast.success("Password changed successfully");
-  };
 
   if (isLoading) return <p className="text-muted-foreground py-16 text-center text-sm">Loading your profile…</p>;
 
