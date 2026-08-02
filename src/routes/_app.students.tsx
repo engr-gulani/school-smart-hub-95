@@ -65,13 +65,27 @@ function StudentsPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(""));
 
-  const classes = data?.classes ?? [];
-  const students = data?.students ?? [];
+  const allClasses = data?.classes ?? [];
+  const allStudents = data?.students ?? [];
+
+  // Subject teachers are read-only and only see the classes they teach a subject in.
+  const isSubjectTeacher = user.role === "subject_teacher";
+  const taughtClassIds = useMemo(
+    () =>
+      new Set(
+        (data?.subjects ?? []).filter((s) => s.teacherId === user.id).map((s) => s.classId),
+      ),
+    [data, user.id],
+  );
+
+  const classes = isSubjectTeacher ? allClasses.filter((c) => taughtClassIds.has(c.id)) : allClasses;
+  const students = isSubjectTeacher ? allStudents.filter((s) => taughtClassIds.has(s.classId)) : allStudents;
 
   const canManage =
-    user.role === "school_admin" ||
-    user.role === "super_admin" ||
-    classes.some((c) => c.classTeacherId === user.id);
+    !isSubjectTeacher &&
+    (user.role === "school_admin" ||
+      user.role === "super_admin" ||
+      allClasses.some((c) => c.classTeacherId === user.id));
 
   const filtered = useMemo(
     () =>
