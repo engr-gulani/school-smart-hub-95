@@ -24,6 +24,7 @@ import { Route as AppMyResultsRouteImport } from './routes/_app.my-results'
 import { Route as AppMyProfileRouteImport } from './routes/_app.my-profile'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClassesRouteImport } from './routes/_app.classes'
+import { Route as AppReportCardsClassIdRouteImport } from './routes/_app.report-cards.$classId'
 import { Route as AppReportCardStudentIdRouteImport } from './routes/_app.report-card.$studentId'
 
 const AuthRoute = AuthRouteImport.update({
@@ -100,6 +101,11 @@ const AppClassesRoute = AppClassesRouteImport.update({
   path: '/classes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReportCardsClassIdRoute = AppReportCardsClassIdRouteImport.update({
+  id: '/report-cards/$classId',
+  path: '/report-cards/$classId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppReportCardStudentIdRoute = AppReportCardStudentIdRouteImport.update({
   id: '/report-card/$studentId',
   path: '/report-card/$studentId',
@@ -122,6 +128,7 @@ export interface FileRoutesByFullPath {
   '/teachers': typeof AppTeachersRoute
   '/users': typeof AppUsersRoute
   '/report-card/$studentId': typeof AppReportCardStudentIdRoute
+  '/report-cards/$classId': typeof AppReportCardsClassIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/teachers': typeof AppTeachersRoute
   '/users': typeof AppUsersRoute
   '/report-card/$studentId': typeof AppReportCardStudentIdRoute
+  '/report-cards/$classId': typeof AppReportCardsClassIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/_app/teachers': typeof AppTeachersRoute
   '/_app/users': typeof AppUsersRoute
   '/_app/report-card/$studentId': typeof AppReportCardStudentIdRoute
+  '/_app/report-cards/$classId': typeof AppReportCardsClassIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/teachers'
     | '/users'
     | '/report-card/$studentId'
+    | '/report-cards/$classId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/teachers'
     | '/users'
     | '/report-card/$studentId'
+    | '/report-cards/$classId'
   id:
     | '__root__'
     | '/'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/_app/teachers'
     | '/_app/users'
     | '/_app/report-card/$studentId'
+    | '/_app/report-cards/$classId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -327,6 +339,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClassesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/report-cards/$classId': {
+      id: '/_app/report-cards/$classId'
+      path: '/report-cards/$classId'
+      fullPath: '/report-cards/$classId'
+      preLoaderRoute: typeof AppReportCardsClassIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/report-card/$studentId': {
       id: '/_app/report-card/$studentId'
       path: '/report-card/$studentId'
@@ -351,6 +370,7 @@ interface AppRouteChildren {
   AppTeachersRoute: typeof AppTeachersRoute
   AppUsersRoute: typeof AppUsersRoute
   AppReportCardStudentIdRoute: typeof AppReportCardStudentIdRoute
+  AppReportCardsClassIdRoute: typeof AppReportCardsClassIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -367,6 +387,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppTeachersRoute: AppTeachersRoute,
   AppUsersRoute: AppUsersRoute,
   AppReportCardStudentIdRoute: AppReportCardStudentIdRoute,
+  AppReportCardsClassIdRoute: AppReportCardsClassIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

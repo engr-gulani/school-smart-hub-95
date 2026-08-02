@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileCheck2, FileText, Printer, CheckCircle2, Circle, Undo2 } from "lucide-react";
+import { FileCheck2, FileText, Printer, CheckCircle2, Circle, Undo2, Download } from "lucide-react";
 import { useAuth, can } from "@/lib/auth-context";
 import { updateResultApproval } from "@/lib/academics.functions";
 import {
@@ -79,6 +79,11 @@ function ResultsPage() {
               ))}
             </SelectContent>
           </Select>
+          <Link to="/report-cards/$classId" params={{ classId }} search={{ print: "1" }} target="_blank">
+            <Button size="sm" className="gap-2">
+              <Download className="h-4 w-4" /> Download all report cards (PDF)
+            </Button>
+          </Link>
           <Button variant="outline" size="sm" className="gap-2" onClick={() => window.print()}>
             <Printer className="h-4 w-4" /> Print
           </Button>
