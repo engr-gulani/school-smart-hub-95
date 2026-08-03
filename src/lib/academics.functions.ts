@@ -404,7 +404,7 @@ export const upsertStudent = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => studentSchema.parse(input))
   .handler(async ({ data, context }) => {
     const roles = await callerRoles(context);
-    if (!isAdmin(roles)) {
+    if (!isLeadership(roles)) {
       const { data: cls } = await context.supabase
         .from("classes")
         .select("class_teacher_id")
@@ -486,7 +486,7 @@ export const upsertClass = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => classSchema.parse(input))
   .handler(async ({ data, context }) => {
     const roles = await callerRoles(context);
-    if (!isAdmin(roles)) throw new Error("Only admins can manage classes");
+    if (!isLeadership(roles)) throw new Error("Only admins, the principal or the vice principal can manage classes");
 
     const id = data.id || `cls-${data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     const { data: existing } = await context.supabase
@@ -523,7 +523,7 @@ export const upsertSubject = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => subjectSchema.parse(input))
   .handler(async ({ data, context }) => {
     const roles = await callerRoles(context);
-    if (!isAdmin(roles)) throw new Error("Only admins can manage subjects");
+    if (!isLeadership(roles)) throw new Error("Only admins, the principal or the vice principal can manage subjects");
 
     const id =
       data.id || `sub-${data.classId}-${data.code.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
