@@ -319,12 +319,17 @@ export const updateResultApproval = createServerFn({ method: "POST" })
     const admin = isAdmin(roles);
     const now = new Date().toISOString();
 
+    const termId = data.termId || (await currentTermId(context));
+    if (!termId) throw new Error("No academic term is currently in session");
+
     const { data: current } = await context.supabase
       .from("result_approvals")
       .select("class_id, stage")
       .eq("class_id", data.classId)
+      .eq("term_id", termId)
       .maybeSingle();
     const stage = current?.stage ?? "draft";
+
 
     let patch: Record<string, unknown>;
     switch (data.action) {
