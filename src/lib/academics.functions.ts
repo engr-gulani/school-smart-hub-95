@@ -393,10 +393,21 @@ export const upsertClass = createServerFn({ method: "POST" })
     if (!isAdmin(roles)) throw new Error("Only admins can manage classes");
 
     const id = data.id || `cls-${data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+    const { data: existing } = await context.supabase
+      .from("classes")
+      .select("sort_order")
+      .eq("id", id)
+      .maybeSingle();
+
     const { error } = await context.supabase
       .from("classes")
       .upsert(
-        { id, name: data.name, level: data.level, sort_order: data.sortOrder ?? 0 },
+        {
+          id,
+          name: data.name,
+          level: data.level,
+          sort_order: data.sortOrder ?? existing?.sort_order ?? 100,
+        },
         { onConflict: "id" },
       );
     if (error) throw new Error(error.message);
