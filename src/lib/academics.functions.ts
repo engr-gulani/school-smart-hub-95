@@ -62,25 +62,52 @@ export const getAcademics = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const supabase = context.supabase;
 
-    const [classesRes, subjectsRes, studentsRes, scoresRes, approvalsRes, profilesRes, rolesRes] =
-      await Promise.all([
-        supabase.from("classes").select("id, name, level, sort_order, class_teacher_id").order("sort_order"),
-        supabase.from("subjects").select("id, name, code, class_id, teacher_id").order("name"),
-        supabase
-          .from("students")
-          .select("id, admission_no, full_name, gender, dob, class_id, parent_name, parent_phone, address, user_id")
-          .order("full_name"),
-        supabase.from("scores").select("student_id, subject_id, ca1, ca2, assignment, exam"),
-        supabase.from("result_approvals").select("class_id, stage, submitted_at, vp_approved_at, principal_approved_at, published_at"),
-        supabase.from("profiles").select("id, full_name, email, staff_id, admission_no, class_id"),
-
-        supabase.from("user_roles").select("user_id, role"),
-      ]);
+    const [
+      classesRes,
+      subjectsRes,
+      studentsRes,
+      scoresRes,
+      approvalsRes,
+      profilesRes,
+      rolesRes,
+      termsRes,
+      settingsRes,
+      announcementsRes,
+      promotionsRes,
+    ] = await Promise.all([
+      supabase.from("classes").select("id, name, level, sort_order, class_teacher_id").order("sort_order"),
+      supabase.from("subjects").select("id, name, code, class_id, teacher_id").order("name"),
+      supabase
+        .from("students")
+        .select("id, admission_no, full_name, gender, dob, class_id, parent_name, parent_phone, address, user_id")
+        .order("full_name"),
+      supabase.from("scores").select("student_id, subject_id, term_id, ca1, ca2, assignment, exam"),
+      supabase
+        .from("result_approvals")
+        .select("class_id, term_id, stage, submitted_at, vp_approved_at, principal_approved_at, published_at"),
+      supabase.from("profiles").select("id, full_name, email, staff_id, admission_no, class_id"),
+      supabase.from("user_roles").select("user_id, role"),
+      supabase
+        .from("terms")
+        .select("id, session, name, sort_order, status, starts_on, ends_on")
+        .order("session")
+        .order("sort_order"),
+      supabase.from("school_settings").select("current_term_id, next_term_begins").eq("id", "default").maybeSingle(),
+      supabase
+        .from("announcements")
+        .select("id, title, body, audience, kind, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("promotions")
+        .select("student_id, session, from_class_id, to_class_id, decision, average, terms_counted, created_at"),
+    ]);
 
     const firstError = [classesRes, subjectsRes, studentsRes, scoresRes, approvalsRes, profilesRes, rolesRes].find(
       (r: any) => r.error,
     ) as any;
     if (firstError?.error) throw new Error(firstError.error.message);
+
 
     const roleMap = new Map<string, string>();
     ((rolesRes.data ?? []) as { user_id: string; role: string }[]).forEach((r) => roleMap.set(r.user_id, r.role));
