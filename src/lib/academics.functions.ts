@@ -376,3 +376,51 @@ export const updateMyContact = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const classSchema = z.object({
+  id: z.string().trim().max(80).optional().or(z.literal("")),
+  name: z.string().trim().min(2).max(80),
+  level: z.enum(["Nursery", "Primary", "Junior Secondary", "Senior Secondary"]),
+  sortOrder: z.number().int().min(0).max(999).optional(),
+});
+
+/** Admins create or rename a class. */
+export const upsertClass = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => classSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const roles = await callerRoles(context);
+    if (!isAdmin(roles)) throw new Error("Only admins can manage classes");
+
+    const id = data.id || `cls-${data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+    const row: Record<string, unknown> = { id, name: data.name, level: data.level };
+    if (data.sortOrder !== undefined) row['sort_order'] = data.sortOrder;
+
+    const { error } = await context.supabase.from("classes").upsert(row, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+    return { id };
+  });
+
+const subjectSchema = z.object({
+  id: z.string().trim().max(80).optional().or(z.literal("")),
+  name: z.string().trim().min(2).max(80),
+  code: z.string().trim().min(2).max(20),
+  classId: z.string().trim().min(1).max(80),
+});
+
+/** Admins create or edit a subject for a class. */
+export const upsertSubject = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => subjectSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const roles = await callerRoles(context);
+    if (!isAdmin(roles)) throw new Error("Only admins can manage subjects");
+
+    const id =
+      data.id || `sub-${data.classId}-${data.code.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+    const { error } = await context.supabase
+      .from("subjects")
+      .upsert({ id, name: data.name, code: data.code.toUpperCase(), class_id: data.classId }, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+    return { id };
+  });
