@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          audience: string
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          title: string
+        }
+        Insert: {
+          audience?: string
+          body: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          title: string
+        }
+        Update: {
+          audience?: string
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           class_teacher_id: string | null
@@ -85,6 +123,77 @@ export type Database = {
         }
         Relationships: []
       }
+      promotions: {
+        Row: {
+          average: number
+          created_at: string
+          decided_by: string | null
+          decision: string
+          from_class_id: string | null
+          id: string
+          session: string
+          student_id: string
+          terms_counted: number
+          to_class_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          average?: number
+          created_at?: string
+          decided_by?: string | null
+          decision?: string
+          from_class_id?: string | null
+          id?: string
+          session: string
+          student_id: string
+          terms_counted?: number
+          to_class_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          average?: number
+          created_at?: string
+          decided_by?: string | null
+          decision?: string
+          from_class_id?: string | null
+          id?: string
+          session?: string
+          student_id?: string
+          terms_counted?: number
+          to_class_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotions_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_from_class_id_fkey"
+            columns: ["from_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotions_to_class_id_fkey"
+            columns: ["to_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       result_approvals: {
         Row: {
           class_id: string
@@ -97,6 +206,7 @@ export type Database = {
           stage: string
           submitted_at: string | null
           submitted_by: string | null
+          term_id: string
           updated_at: string
           vp_approved_at: string | null
           vp_approved_by: string | null
@@ -112,6 +222,7 @@ export type Database = {
           stage?: string
           submitted_at?: string | null
           submitted_by?: string | null
+          term_id?: string
           updated_at?: string
           vp_approved_at?: string | null
           vp_approved_by?: string | null
@@ -127,6 +238,7 @@ export type Database = {
           stage?: string
           submitted_at?: string | null
           submitted_by?: string | null
+          term_id?: string
           updated_at?: string
           vp_approved_at?: string | null
           vp_approved_by?: string | null
@@ -135,7 +247,7 @@ export type Database = {
           {
             foreignKeyName: "result_approvals_class_id_fkey"
             columns: ["class_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
           },
@@ -161,10 +273,49 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "result_approvals_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "result_approvals_vp_approved_by_fkey"
             columns: ["vp_approved_by"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_settings: {
+        Row: {
+          created_at: string
+          current_term_id: string | null
+          id: string
+          next_term_begins: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_term_id?: string | null
+          id?: string
+          next_term_begins?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_term_id?: string | null
+          id?: string
+          next_term_begins?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_settings_current_term_id_fkey"
+            columns: ["current_term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
             referencedColumns: ["id"]
           },
         ]
@@ -180,6 +331,7 @@ export type Database = {
           id: string
           student_id: string
           subject_id: string
+          term_id: string
           updated_at: string
         }
         Insert: {
@@ -192,6 +344,7 @@ export type Database = {
           id?: string
           student_id: string
           subject_id: string
+          term_id?: string
           updated_at?: string
         }
         Update: {
@@ -204,6 +357,7 @@ export type Database = {
           id?: string
           student_id?: string
           subject_id?: string
+          term_id?: string
           updated_at?: string
         }
         Relationships: [
@@ -226,6 +380,13 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scores_term_id_fkey"
+            columns: ["term_id"]
+            isOneToOne: false
+            referencedRelation: "terms"
             referencedColumns: ["id"]
           },
         ]
@@ -334,6 +495,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      terms: {
+        Row: {
+          created_at: string
+          ends_on: string | null
+          id: string
+          name: string
+          session: string
+          sort_order: number
+          starts_on: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ends_on?: string | null
+          id: string
+          name: string
+          session: string
+          sort_order?: number
+          starts_on?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ends_on?: string | null
+          id?: string
+          name?: string
+          session?: string
+          sort_order?: number
+          starts_on?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
