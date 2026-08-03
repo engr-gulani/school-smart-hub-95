@@ -173,6 +173,7 @@ export const getAcademics = createServerFn({ method: "GET" })
       scores: ((scoresRes.data ?? []) as any[]).map((s) => ({
         studentId: s.student_id as string,
         subjectId: s.subject_id as string,
+        termId: (s.term_id as string) ?? "",
         ca1: s.ca1 as number,
         ca2: s.ca2 as number,
         assignment: s.assignment as number,
@@ -180,14 +181,47 @@ export const getAcademics = createServerFn({ method: "GET" })
       })),
       approvals: ((approvalsRes.data ?? []) as any[]).map((a) => ({
         classId: a.class_id as string,
+        termId: (a.term_id as string) ?? "",
         stage: a.stage as string,
         submittedAt: (a.submitted_at as string) ?? null,
         vpApprovedAt: (a.vp_approved_at as string) ?? null,
         principalApprovedAt: (a.principal_approved_at as string) ?? null,
         publishedAt: (a.published_at as string) ?? null,
       })),
+      terms: ((termsRes.data ?? []) as any[]).map((t) => ({
+        id: t.id as string,
+        session: t.session as string,
+        name: t.name as string,
+        sortOrder: t.sort_order as number,
+        status: t.status as string,
+        startsOn: (t.starts_on as string) ?? null,
+        endsOn: (t.ends_on as string) ?? null,
+      })),
+      settings: {
+        currentTermId: ((settingsRes as any)?.data?.current_term_id as string) ?? "",
+        nextTermBegins: ((settingsRes as any)?.data?.next_term_begins as string) ?? null,
+      },
+      announcements: ((announcementsRes.data ?? []) as any[]).map((a) => ({
+        id: a.id as string,
+        title: a.title as string,
+        body: a.body as string,
+        audience: a.audience as string,
+        kind: a.kind as string,
+        createdAt: a.created_at as string,
+      })),
+      promotions: ((promotionsRes.data ?? []) as any[]).map((p) => ({
+        studentId: p.student_id as string,
+        session: p.session as string,
+        fromClassId: (p.from_class_id as string) ?? null,
+        toClassId: (p.to_class_id as string) ?? null,
+        decision: p.decision as string,
+        average: Number(p.average ?? 0),
+        termsCounted: (p.terms_counted as number) ?? 0,
+        createdAt: p.created_at as string,
+      })),
       staff,
     };
+
   });
 
 export const saveSubjectScores = createServerFn({ method: "POST" })
