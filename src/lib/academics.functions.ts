@@ -240,11 +240,20 @@ export const saveSubjectScores = createServerFn({ method: "POST" })
     const owns = subject.teacher_id === context.userId;
     if (!owns && !isAdmin(roles)) throw new Error("You are not assigned to this subject");
 
+    const termId = data.termId || (await currentTermId(context));
+    if (!termId) throw new Error("No academic term is currently in session");
+
+    const { data: term } = await context.supabase.from("terms").select("status").eq("id", termId).maybeSingle();
+    if (term?.status === "closed" && !isAdmin(roles)) {
+      throw new Error("This term is closed — scores can no longer be edited");
+    }
+
     // Scores are locked once the class result has left the teacher's desk.
     const { data: approval } = await context.supabase
       .from("result_approvals")
       .select("stage")
       .eq("class_id", subject.class_id)
+      .eq("term_id", termId)
       .maybeSingle();
     if (approval && approval.stage !== "draft" && !isAdmin(roles)) {
       throw new Error("Results for this class are already submitted for approval and can no longer be edited");
@@ -253,6 +262,7 @@ export const saveSubjectScores = createServerFn({ method: "POST" })
     const rows = data.entries.map((e) => ({
       student_id: e.studentId,
       subject_id: data.subjectId,
+      term_id: termId,
       ca1: e.ca1,
       ca2: e.ca2,
       assignment: e.assignment,
@@ -260,9 +270,12 @@ export const saveSubjectScores = createServerFn({ method: "POST" })
       entered_by: context.userId,
     }));
 
-    const { error } = await context.supabase.from("scores").upsert(rows, { onConflict: "student_id,subject_id" });
+    const { error } = await context.supabase
+      .from("scores")
+      .upsert(rows, { onConflict: "student_id,subject_id,term_id" });
     if (error) throw new Error(error.message);
     return { saved: rows.length };
+
   });
 
 export const assignSubjectTeacher = createServerFn({ method: "POST" })
