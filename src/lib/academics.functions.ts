@@ -6,6 +6,7 @@ const MAX = { ca1: 20, ca2: 10, assignment: 10, exam: 60 } as const;
 
 const saveScoresSchema = z.object({
   subjectId: z.string().trim().min(1).max(80),
+  termId: z.string().trim().max(80).optional().or(z.literal("")),
   entries: z
     .array(
       z.object({
@@ -31,6 +32,7 @@ const assignClassSchema = z.object({
 
 const approvalSchema = z.object({
   classId: z.string().trim().min(1).max(80),
+  termId: z.string().trim().max(80).optional().or(z.literal("")),
   action: z.enum(["submit", "vp_approve", "principal_approve", "publish", "reset"]),
 });
 
@@ -41,31 +43,72 @@ async function callerRoles(context: { supabase: any; userId: string }): Promise<
 }
 
 const isAdmin = (roles: string[]) => roles.includes("school_admin") || roles.includes("super_admin");
+/** Admins plus the principal and the vice principal (academic). */
+const isLeadership = (roles: string[]) =>
+  isAdmin(roles) || roles.includes("principal") || roles.includes("vp_academic");
+
+/** The term currently in session, used when a caller doesn't name one. */
+async function currentTermId(context: { supabase: any }): Promise<string> {
+  const { data } = await context.supabase
+    .from("school_settings")
+    .select("current_term_id")
+    .eq("id", "default")
+    .maybeSingle();
+  return (data?.current_term_id as string) ?? "";
+}
+
 
 export const getAcademics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const supabase = context.supabase;
 
-    const [classesRes, subjectsRes, studentsRes, scoresRes, approvalsRes, profilesRes, rolesRes] =
-      await Promise.all([
-        supabase.from("classes").select("id, name, level, sort_order, class_teacher_id").order("sort_order"),
-        supabase.from("subjects").select("id, name, code, class_id, teacher_id").order("name"),
-        supabase
-          .from("students")
-          .select("id, admission_no, full_name, gender, dob, class_id, parent_name, parent_phone, address, user_id")
-          .order("full_name"),
-        supabase.from("scores").select("student_id, subject_id, ca1, ca2, assignment, exam"),
-        supabase.from("result_approvals").select("class_id, stage, submitted_at, vp_approved_at, principal_approved_at, published_at"),
-        supabase.from("profiles").select("id, full_name, email, staff_id, admission_no, class_id"),
-
-        supabase.from("user_roles").select("user_id, role"),
-      ]);
+    const [
+      classesRes,
+      subjectsRes,
+      studentsRes,
+      scoresRes,
+      approvalsRes,
+      profilesRes,
+      rolesRes,
+      termsRes,
+      settingsRes,
+      announcementsRes,
+      promotionsRes,
+    ] = await Promise.all([
+      supabase.from("classes").select("id, name, level, sort_order, class_teacher_id").order("sort_order"),
+      supabase.from("subjects").select("id, name, code, class_id, teacher_id").order("name"),
+      supabase
+        .from("students")
+        .select("id, admission_no, full_name, gender, dob, class_id, parent_name, parent_phone, address, user_id")
+        .order("full_name"),
+      supabase.from("scores").select("student_id, subject_id, term_id, ca1, ca2, assignment, exam"),
+      supabase
+        .from("result_approvals")
+        .select("class_id, term_id, stage, submitted_at, vp_approved_at, principal_approved_at, published_at"),
+      supabase.from("profiles").select("id, full_name, email, staff_id, admission_no, class_id"),
+      supabase.from("user_roles").select("user_id, role"),
+      supabase
+        .from("terms")
+        .select("id, session, name, sort_order, status, starts_on, ends_on")
+        .order("session")
+        .order("sort_order"),
+      supabase.from("school_settings").select("current_term_id, next_term_begins").eq("id", "default").maybeSingle(),
+      supabase
+        .from("announcements")
+        .select("id, title, body, audience, kind, created_at")
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase
+        .from("promotions")
+        .select("student_id, session, from_class_id, to_class_id, decision, average, terms_counted, created_at"),
+    ]);
 
     const firstError = [classesRes, subjectsRes, studentsRes, scoresRes, approvalsRes, profilesRes, rolesRes].find(
       (r: any) => r.error,
     ) as any;
     if (firstError?.error) throw new Error(firstError.error.message);
+
 
     const roleMap = new Map<string, string>();
     ((rolesRes.data ?? []) as { user_id: string; role: string }[]).forEach((r) => roleMap.set(r.user_id, r.role));
@@ -131,6 +174,7 @@ export const getAcademics = createServerFn({ method: "GET" })
       scores: ((scoresRes.data ?? []) as any[]).map((s) => ({
         studentId: s.student_id as string,
         subjectId: s.subject_id as string,
+        termId: (s.term_id as string) ?? "",
         ca1: s.ca1 as number,
         ca2: s.ca2 as number,
         assignment: s.assignment as number,
@@ -138,14 +182,47 @@ export const getAcademics = createServerFn({ method: "GET" })
       })),
       approvals: ((approvalsRes.data ?? []) as any[]).map((a) => ({
         classId: a.class_id as string,
+        termId: (a.term_id as string) ?? "",
         stage: a.stage as string,
         submittedAt: (a.submitted_at as string) ?? null,
         vpApprovedAt: (a.vp_approved_at as string) ?? null,
         principalApprovedAt: (a.principal_approved_at as string) ?? null,
         publishedAt: (a.published_at as string) ?? null,
       })),
+      terms: ((termsRes.data ?? []) as any[]).map((t) => ({
+        id: t.id as string,
+        session: t.session as string,
+        name: t.name as string,
+        sortOrder: t.sort_order as number,
+        status: t.status as string,
+        startsOn: (t.starts_on as string) ?? null,
+        endsOn: (t.ends_on as string) ?? null,
+      })),
+      settings: {
+        currentTermId: ((settingsRes as any)?.data?.current_term_id as string) ?? "",
+        nextTermBegins: ((settingsRes as any)?.data?.next_term_begins as string) ?? null,
+      },
+      announcements: ((announcementsRes.data ?? []) as any[]).map((a) => ({
+        id: a.id as string,
+        title: a.title as string,
+        body: a.body as string,
+        audience: a.audience as string,
+        kind: a.kind as string,
+        createdAt: a.created_at as string,
+      })),
+      promotions: ((promotionsRes.data ?? []) as any[]).map((p) => ({
+        studentId: p.student_id as string,
+        session: p.session as string,
+        fromClassId: (p.from_class_id as string) ?? null,
+        toClassId: (p.to_class_id as string) ?? null,
+        decision: p.decision as string,
+        average: Number(p.average ?? 0),
+        termsCounted: (p.terms_counted as number) ?? 0,
+        createdAt: p.created_at as string,
+      })),
       staff,
     };
+
   });
 
 export const saveSubjectScores = createServerFn({ method: "POST" })
@@ -164,11 +241,20 @@ export const saveSubjectScores = createServerFn({ method: "POST" })
     const owns = subject.teacher_id === context.userId;
     if (!owns && !isAdmin(roles)) throw new Error("You are not assigned to this subject");
 
+    const termId = data.termId || (await currentTermId(context));
+    if (!termId) throw new Error("No academic term is currently in session");
+
+    const { data: term } = await context.supabase.from("terms").select("status").eq("id", termId).maybeSingle();
+    if (term?.status === "closed" && !isAdmin(roles)) {
+      throw new Error("This term is closed — scores can no longer be edited");
+    }
+
     // Scores are locked once the class result has left the teacher's desk.
     const { data: approval } = await context.supabase
       .from("result_approvals")
       .select("stage")
       .eq("class_id", subject.class_id)
+      .eq("term_id", termId)
       .maybeSingle();
     if (approval && approval.stage !== "draft" && !isAdmin(roles)) {
       throw new Error("Results for this class are already submitted for approval and can no longer be edited");
@@ -177,6 +263,7 @@ export const saveSubjectScores = createServerFn({ method: "POST" })
     const rows = data.entries.map((e) => ({
       student_id: e.studentId,
       subject_id: data.subjectId,
+      term_id: termId,
       ca1: e.ca1,
       ca2: e.ca2,
       assignment: e.assignment,
@@ -184,9 +271,12 @@ export const saveSubjectScores = createServerFn({ method: "POST" })
       entered_by: context.userId,
     }));
 
-    const { error } = await context.supabase.from("scores").upsert(rows, { onConflict: "student_id,subject_id" });
+    const { error } = await context.supabase
+      .from("scores")
+      .upsert(rows, { onConflict: "student_id,subject_id,term_id" });
     if (error) throw new Error(error.message);
     return { saved: rows.length };
+
   });
 
 export const assignSubjectTeacher = createServerFn({ method: "POST" })
@@ -229,12 +319,17 @@ export const updateResultApproval = createServerFn({ method: "POST" })
     const admin = isAdmin(roles);
     const now = new Date().toISOString();
 
+    const termId = data.termId || (await currentTermId(context));
+    if (!termId) throw new Error("No academic term is currently in session");
+
     const { data: current } = await context.supabase
       .from("result_approvals")
       .select("class_id, stage")
       .eq("class_id", data.classId)
+      .eq("term_id", termId)
       .maybeSingle();
     const stage = current?.stage ?? "draft";
+
 
     let patch: Record<string, unknown>;
     switch (data.action) {
@@ -285,8 +380,9 @@ export const updateResultApproval = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase
       .from("result_approvals")
-      .upsert({ class_id: data.classId, ...patch }, { onConflict: "class_id" });
+      .upsert({ class_id: data.classId, term_id: termId, ...patch }, { onConflict: "class_id,term_id" });
     if (error) throw new Error(error.message);
+
     return { stage: (patch as any).stage as string };
   });
 
@@ -308,7 +404,7 @@ export const upsertStudent = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => studentSchema.parse(input))
   .handler(async ({ data, context }) => {
     const roles = await callerRoles(context);
-    if (!isAdmin(roles)) {
+    if (!isLeadership(roles)) {
       const { data: cls } = await context.supabase
         .from("classes")
         .select("class_teacher_id")
@@ -390,7 +486,7 @@ export const upsertClass = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => classSchema.parse(input))
   .handler(async ({ data, context }) => {
     const roles = await callerRoles(context);
-    if (!isAdmin(roles)) throw new Error("Only admins can manage classes");
+    if (!isLeadership(roles)) throw new Error("Only admins, the principal or the vice principal can manage classes");
 
     const id = data.id || `cls-${data.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     const { data: existing } = await context.supabase
@@ -427,7 +523,7 @@ export const upsertSubject = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => subjectSchema.parse(input))
   .handler(async ({ data, context }) => {
     const roles = await callerRoles(context);
-    if (!isAdmin(roles)) throw new Error("Only admins can manage subjects");
+    if (!isLeadership(roles)) throw new Error("Only admins, the principal or the vice principal can manage subjects");
 
     const id =
       data.id || `sub-${data.classId}-${data.code.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
