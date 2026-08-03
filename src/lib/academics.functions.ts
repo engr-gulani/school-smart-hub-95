@@ -6,6 +6,7 @@ const MAX = { ca1: 20, ca2: 10, assignment: 10, exam: 60 } as const;
 
 const saveScoresSchema = z.object({
   subjectId: z.string().trim().min(1).max(80),
+  termId: z.string().trim().max(80).optional().or(z.literal("")),
   entries: z
     .array(
       z.object({
