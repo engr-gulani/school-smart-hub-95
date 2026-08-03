@@ -380,8 +380,9 @@ export const updateResultApproval = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase
       .from("result_approvals")
-      .upsert({ class_id: data.classId, ...patch }, { onConflict: "class_id" });
+      .upsert({ class_id: data.classId, term_id: termId, ...patch }, { onConflict: "class_id,term_id" });
     if (error) throw new Error(error.message);
+
     return { stage: (patch as any).stage as string };
   });
 
