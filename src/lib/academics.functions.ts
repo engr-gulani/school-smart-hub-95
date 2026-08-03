@@ -31,6 +31,7 @@ const assignClassSchema = z.object({
 
 const approvalSchema = z.object({
   classId: z.string().trim().min(1).max(80),
+  termId: z.string().trim().max(80).optional().or(z.literal("")),
   action: z.enum(["submit", "vp_approve", "principal_approve", "publish", "reset"]),
 });
 
@@ -41,6 +42,20 @@ async function callerRoles(context: { supabase: any; userId: string }): Promise<
 }
 
 const isAdmin = (roles: string[]) => roles.includes("school_admin") || roles.includes("super_admin");
+/** Admins plus the principal and the vice principal (academic). */
+const isLeadership = (roles: string[]) =>
+  isAdmin(roles) || roles.includes("principal") || roles.includes("vp_academic");
+
+/** The term currently in session, used when a caller doesn't name one. */
+async function currentTermId(context: { supabase: any }): Promise<string> {
+  const { data } = await context.supabase
+    .from("school_settings")
+    .select("current_term_id")
+    .eq("id", "default")
+    .maybeSingle();
+  return (data?.current_term_id as string) ?? "";
+}
+
 
 export const getAcademics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
