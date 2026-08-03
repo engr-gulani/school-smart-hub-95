@@ -4,7 +4,9 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { School, Users } from "lucide-react";
+import { School, Users, Plus, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ClassFormDialog } from "@/components/class-form-dialog";
 import { useAuth, can } from "@/lib/auth-context";
 import { assignClassTeacher } from "@/lib/academics.functions";
 import { useAcademics, useRefreshAcademics } from "@/lib/use-academics";
@@ -26,6 +28,7 @@ function ClassesPage() {
   const assign = useServerFn(assignClassTeacher);
 
   const canAssign = can(user.role, "manage_school") || can(user.role, "assign_subjects");
+  const canManage = can(user.role, "manage_school");
   const teachers = (data?.staff ?? []).filter((s) => s.role === "class_teacher" || s.role === "subject_teacher");
 
   const setTeacher = async (classId: string, value: string) => {
@@ -42,9 +45,21 @@ function ClassesPage() {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="font-display text-2xl font-semibold">Classes</h1>
-        <p className="text-muted-foreground text-sm">Enrolment per class and class teacher assignments.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl font-semibold">Classes</h1>
+          <p className="text-muted-foreground text-sm">Enrolment per class and class teacher assignments.</p>
+        </div>
+        {canManage && (
+          <ClassFormDialog
+            onSaved={refresh}
+            trigger={
+              <Button size="sm" className="gap-2">
+                <Plus className="h-4 w-4" /> Add class
+              </Button>
+            }
+          />
+        )}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -58,7 +73,20 @@ function ClassesPage() {
                   <div className="bg-gradient-primary text-primary-foreground flex h-10 w-10 items-center justify-center rounded-lg">
                     <School className="h-5 w-5" />
                   </div>
-                  <Badge variant="outline">{c.level}</Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{c.level}</Badge>
+                    {canManage && (
+                      <ClassFormDialog
+                        initial={{ id: c.id, name: c.name, level: c.level }}
+                        onSaved={refresh}
+                        trigger={
+                          <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={`Edit ${c.name}`}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        }
+                      />
+                    )}
+                  </div>
                 </div>
                 <h3 className="font-display mt-4 text-lg font-semibold">{c.name}</h3>
                 {canAssign ? (
