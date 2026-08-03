@@ -56,11 +56,16 @@ interface Assessment {
   affective: Record<string, number>;
   activities: Record<string, number>;
   teacherComment: string;
-  teacherName: string;
-  teacherSign: string;
   principalComment: string;
-  principalName: string;
-  principalSign: string;
+}
+
+/** Turn "Mrs. Grace Adewale" into a short signature such as "G. Adewale". */
+function signatureFor(name: string | null | undefined): string {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/).filter((w) => !/^(mr|mrs|ms|miss|dr|prof)\.?$/i.test(w));
+  if (parts.length === 0) return name;
+  if (parts.length === 1) return parts[0]!;
+  return `${parts[0]![0]}. ${parts[parts.length - 1]}`;
 }
 
 const DEFAULTS: Assessment = {
@@ -68,11 +73,7 @@ const DEFAULTS: Assessment = {
   activities: {},
   teacherComment:
     "A diligent student with steady improvement across core subjects. Keep up the reading habit.",
-  teacherName: "Mrs. Grace Adewale",
-  teacherSign: "G. Adewale",
   principalComment: "Very good performance this term. Aim higher next term — we believe in you.",
-  principalName: "Mr. Samuel Okoro",
-  principalSign: "S. Okoro",
 };
 
 function storageKey(studentId: string) {
@@ -120,6 +121,12 @@ export function ReportCardSheet({
 }: Props) {
   const SCORES = data.scores;
   const { state, update } = useAssessment(student.id);
+
+  // Names come straight from the accounts the admin creates, so reassigning a
+  // class teacher or principal updates every report card automatically.
+  const classTeacherName =
+    data.classes.find((c) => c.id === student.classId)?.classTeacherName ?? "Unassigned";
+  const principalName = data.staff.find((s) => s.role === "principal")?.name ?? "Unassigned";
 
   return (
     <article className="bg-card text-card-foreground shadow-card mx-auto max-w-[860px] rounded-xl border p-8 print:break-after-page print:border-0 print:shadow-none">
@@ -249,30 +256,18 @@ export function ReportCardSheet({
         <Comment
           title="Class teacher's comment"
           body={state.teacherComment}
-          name={state.teacherName}
-          sign={state.teacherSign}
+          name={classTeacherName}
+          sign={signatureFor(classTeacherName)}
           editable={editable}
-          onChange={(patch) =>
-            update({
-              teacherComment: patch.body ?? state.teacherComment,
-              teacherName: patch.name ?? state.teacherName,
-              teacherSign: patch.sign ?? state.teacherSign,
-            })
-          }
+          onChange={(patch) => update({ teacherComment: patch.body ?? state.teacherComment })}
         />
         <Comment
           title="Principal's comment"
           body={state.principalComment}
-          name={state.principalName}
-          sign={state.principalSign}
+          name={principalName}
+          sign={signatureFor(principalName)}
           editable={editable}
-          onChange={(patch) =>
-            update({
-              principalComment: patch.body ?? state.principalComment,
-              principalName: patch.name ?? state.principalName,
-              principalSign: patch.sign ?? state.principalSign,
-            })
-          }
+          onChange={(patch) => update({ principalComment: patch.body ?? state.principalComment })}
         />
       </section>
 
@@ -397,7 +392,7 @@ function Comment({
   name: string;
   sign: string;
   editable: boolean;
-  onChange: (patch: { body?: string; name?: string; sign?: string }) => void;
+  onChange: (patch: { body?: string }) => void;
 }) {
   return (
     <div className="rounded-lg border p-4">
@@ -413,27 +408,8 @@ function Comment({
         <p className="mt-2 text-sm leading-relaxed">{body}</p>
       )}
       <div className="mt-4 flex items-end justify-between gap-3 border-t pt-2">
-        {editable ? (
-          <>
-            <input
-              value={name}
-              onChange={(e) => onChange({ name: e.target.value })}
-              placeholder="Name"
-              className="border-input bg-background w-1/2 rounded-md border px-2 py-1 text-xs print:border-0 print:px-0"
-            />
-            <input
-              value={sign}
-              onChange={(e) => onChange({ sign: e.target.value })}
-              placeholder="Signature"
-              className="border-input bg-background w-1/2 rounded-md border px-2 py-1 text-right text-xs italic print:border-0 print:px-0"
-            />
-          </>
-        ) : (
-          <>
-            <span className="text-muted-foreground text-xs">— {name}</span>
-            <span className="text-xs italic">{sign}</span>
-          </>
-        )}
+        <span className="text-muted-foreground text-xs">— {name}</span>
+        <span className="text-xs italic">{sign}</span>
       </div>
     </div>
   );
