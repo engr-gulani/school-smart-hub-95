@@ -25,6 +25,7 @@ import {
   gradeFor,
   stageFor,
   STAGE_LABEL,
+  currentTerm,
   type Academics,
 } from "@/lib/use-academics";
 
@@ -41,6 +42,7 @@ export const Route = createFileRoute("/_app/dashboard")({
 function Dashboard() {
   const { user } = useAuth();
   const { data, isLoading } = useAcademics();
+  const term = currentTerm(data);
 
   if (user.role === "student") return <StudentDashboard data={data} isLoading={isLoading} />;
 
@@ -79,7 +81,7 @@ function Dashboard() {
       <div className="flex flex-col justify-between gap-3 md:flex-row md:items-end">
         <div>
           <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
-            {SCHOOL.session} · {SCHOOL.term}
+            {term.isOpen ? term.label : `${term.session} · no term in session`}
           </p>
           <h1 className="font-display text-3xl font-semibold">Welcome back, {user.name.split(" ").slice(-1)[0]}.</h1>
           <p className="text-muted-foreground text-sm">
@@ -98,9 +100,14 @@ function Dashboard() {
               </Button>
             </Link>
           )}
-          <Badge variant="secondary" className="w-fit">
-            Next term begins {SCHOOL.nextTermBegins}
+          <Badge variant={term.isOpen ? "default" : "secondary"} className="w-fit">
+            {term.isOpen ? `${term.name} is open` : "All terms closed"}
           </Badge>
+          {term.nextTermBegins && (
+            <Badge variant="secondary" className="w-fit">
+              Next term begins {term.nextTermBegins}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -246,7 +253,7 @@ function StudentDashboard({ data, isLoading }: { data: Academics | undefined; is
     <div className="space-y-6">
       <div>
         <p className="text-muted-foreground text-xs font-semibold tracking-widest uppercase">
-          {SCHOOL.session} · {SCHOOL.term}
+          {term.isOpen ? term.label : `${term.session} · no term in session`}
         </p>
         <h1 className="font-display text-3xl font-semibold">Welcome back, {student.name.split(" ")[0]}.</h1>
         <p className="text-muted-foreground text-sm">Here's your personalized student portal.</p>
@@ -264,9 +271,14 @@ function StudentDashboard({ data, isLoading }: { data: Academics | undefined; is
             </p>
             <p className="text-muted-foreground font-mono text-xs">{student.admissionNo}</p>
           </div>
-          <Badge variant="secondary" className="w-fit">
-            Next term begins {SCHOOL.nextTermBegins}
+          <Badge variant={term.isOpen ? "default" : "secondary"} className="w-fit">
+            {term.isOpen ? `${term.name} is open` : "All terms closed"}
           </Badge>
+          {term.nextTermBegins && (
+            <Badge variant="secondary" className="w-fit">
+              Next term begins {term.nextTermBegins}
+            </Badge>
+          )}
         </CardContent>
       </Card>
 
@@ -283,7 +295,7 @@ function StudentDashboard({ data, isLoading }: { data: Academics | undefined; is
             <div>
               <CardTitle className="text-base">Latest results</CardTitle>
               <p className="text-muted-foreground mt-1 text-xs">
-                {published ? `Published · ${SCHOOL.term}` : STAGE_LABEL[stage]}
+                {published ? `Published · ${term.name}` : STAGE_LABEL[stage]}
               </p>
             </div>
             {published && (
