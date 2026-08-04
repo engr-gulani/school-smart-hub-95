@@ -227,7 +227,9 @@ function SnapshotBroadsheet({ data, classId }: { data: Academics | undefined; cl
 
 function StudentDashboard({ data, isLoading }: { data: Academics | undefined; isLoading: boolean }) {
   const { user } = useAuth();
+  const term = currentTerm(data);
   const student = (data?.students ?? []).find((s) => s.id === user.studentId || s.userId === user.id);
+
 
   if (isLoading) {
     return <div className="text-muted-foreground py-16 text-center text-sm">Loading your portal…</div>;
