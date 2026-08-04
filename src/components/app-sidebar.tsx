@@ -29,6 +29,8 @@ import {
 } from "@/components/ui/sidebar";
 import { useAuth, ROLE_LABEL, can } from "@/lib/auth-context";
 import { SCHOOL } from "@/lib/mock-data";
+import { useAcademics, currentTerm } from "@/lib/use-academics";
+import { CalendarDays } from "lucide-react";
 
 interface NavItem {
   title: string;
@@ -40,6 +42,8 @@ interface NavItem {
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { user, logout } = useAuth();
+  const { data } = useAcademics();
+  const term = currentTerm(data);
   const role = user.role;
   const isStudent = role === "student";
 
@@ -56,6 +60,7 @@ export function AppSidebar() {
         { title: "Teachers", url: "/teachers", icon: GraduationCap, show: can(role, "manage_teachers") },
         { title: "Classes", url: "/classes", icon: School, show: can(role, "manage_classes") },
         { title: "Subjects", url: "/subjects", icon: BookOpen, show: true },
+        { title: "Notifications", url: "/notifications", icon: Bell, show: true },
       ];
 
   const academic: NavItem[] = isStudent
@@ -69,6 +74,12 @@ export function AppSidebar() {
     ? []
     : [
         { title: "User Accounts", url: "/users", icon: UserCog, show: can(role, "manage_school") },
+        {
+          title: "Sessions & Terms",
+          url: "/sessions",
+          icon: CalendarDays,
+          show: can(role, "manage_school") || role === "principal" || role === "vp_academic",
+        },
         { title: "School Settings", url: "/settings", icon: Settings, show: can(role, "manage_school") },
       ];
 
@@ -111,7 +122,7 @@ export function AppSidebar() {
               {SCHOOL.name}
             </span>
             <span className="text-[11px] text-sidebar-foreground/60">
-              {SCHOOL.session} · {SCHOOL.term}
+              {term.isOpen ? term.label : `${term.session} · between terms`}
             </span>
           </div>
         </div>

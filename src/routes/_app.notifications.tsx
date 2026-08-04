@@ -1,29 +1,33 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bell, CheckCircle2, Megaphone, KeyRound, CalendarDays } from "lucide-react";
+import { Bell, CheckCircle2, Megaphone, CalendarDays } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { SCHOOL } from "@/lib/mock-data";
-import { useAcademics, stageFor, STAGE_LABEL } from "@/lib/use-academics";
+import { useAcademics, stageFor, STAGE_LABEL, currentTerm } from "@/lib/use-academics";
 
 export const Route = createFileRoute("/_app/notifications")({
   head: () => ({
     meta: [
       { title: "Notifications · Greenfield College Portal" },
-      { name: "description", content: "Result updates, announcements and account activity for students." },
+      {
+        name: "description",
+        content: "Term updates, school broadcasts and result activity for staff and students.",
+      },
+      { property: "og:title", content: "Notifications · Greenfield College Portal" },
+      { property: "og:description", content: "Term updates, school broadcasts and result activity." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: NotificationsPage,
 });
 
-type Kind = "result" | "term" | "announcement" | "password" | "attendance";
+type Kind = "result" | "term" | "announcement";
 
 const ICON: Record<Kind, React.ComponentType<{ className?: string }>> = {
   result: CheckCircle2,
   term: CalendarDays,
   announcement: Megaphone,
-  password: KeyRound,
-  attendance: Bell,
 };
 
 function timeAgo(iso: string | null | undefined) {
@@ -39,40 +43,60 @@ function timeAgo(iso: string | null | undefined) {
 function NotificationsPage() {
   const { user } = useAuth();
   const { data, isLoading } = useAcademics();
-
-  if (user.role !== "student") return <Navigate to="/dashboard" />;
-
-  const student = (data?.students ?? []).find((s) => s.id === user.studentId || s.userId === user.id);
+  const isStudent = user.role === "student";
+  const term = currentTerm(data);
 
   if (isLoading) {
     return <div className="text-muted-foreground py-16 text-center text-sm">Loading notifications…</div>;
   }
-  if (!student) {
-    return (
-      <div className="text-muted-foreground py-16 text-center text-sm">
-        No student record linked to this account. Please contact the administrator.
-      </div>
-    );
+
+  const student = isStudent
+    ? (data?.students ?? []).find((s) => s.id === user.studentId || s.userId === user.id)
+    : undefined;
+
+  const items: { id: string; title: string; body: string; when: string; kind: Kind }[] = [];
+
+  for (const a of data?.announcements ?? []) {
+    if (a.audience === "students" && !isStudent) continue;
+    if (a.audience === "staff" && isStudent) continue;
+    items.push({
+      id: a.id,
+      title: a.title,
+      body: a.body,
+      when: timeAgo(a.createdAt) || new Date(a.createdAt).toLocaleDateString(),
+      kind: (a.kind === "term" ? "term" : "announcement") as Kind,
+    });
   }
 
-  const cls = (data?.classes ?? []).find((c) => c.id === student.classId);
-  const approval = (data?.approvals ?? []).find((a) => a.classId === student.classId) as
-    | { publishedAt?: string | null; submittedAt?: string | null }
-    | undefined;
-  const stage = stageFor(data, student.classId);
-  const published = stage === "published";
+  items.push({
+    id: "term-status",
+    title: term.isOpen ? `${term.label} is in session` : "No term is currently in session",
+    body: term.isOpen
+      ? term.nextTermBegins
+        ? `Next term begins ${term.nextTermBegins}.`
+        : "Score entry and result processing are open for this term."
+      : "The academic calendar is between terms. Score entry is locked.",
+    when: "Now",
+    kind: "term",
+  });
 
-  const items: { id: string; title: string; body: string; when: string; kind: Kind }[] = [
-    {
+  if (isStudent && student) {
+    const approval = (data?.approvals ?? []).find(
+      (a) => a.classId === student.classId && (!term.id || a.termId === term.id),
+    );
+    const stage = stageFor(data, student.classId);
+    const published = stage === "published";
+    const cls = (data?.classes ?? []).find((c) => c.id === student.classId);
+    items.push({
       id: "result",
-      title: published ? `${SCHOOL.term} results published` : `${SCHOOL.term} results in progress`,
+      title: published ? `${term.name} results published` : `${term.name} results in progress`,
       body: published
         ? "Your results are now available. Open My Results to view or download your report card."
         : STAGE_LABEL[stage],
       when: timeAgo(approval?.publishedAt ?? approval?.submittedAt) || "This term",
       kind: "result",
-    },
-    {
+    });
+    items.push({
       id: "class",
       title: `You are enrolled in ${cls?.name ?? student.classId}`,
       body: cls?.classTeacherName
@@ -80,23 +104,26 @@ function NotificationsPage() {
         : "A class teacher has not been assigned to your class yet.",
       when: "This term",
       kind: "announcement",
-    },
-    {
-      id: "term",
-      title: "Next term",
-      body: `Second Term begins ${SCHOOL.nextTermBegins}. Please settle school fees before resumption.`,
-      when: "Upcoming",
-      kind: "term",
-    },
-  ];
+    });
+  }
 
   return (
     <div className="space-y-5">
       <div>
         <h1 className="font-display text-2xl font-semibold">Notifications</h1>
-        <p className="text-muted-foreground text-sm">Announcements, result updates and account activity.</p>
+        <p className="text-muted-foreground text-sm">
+          Announcements, term updates and result activity.
+        </p>
       </div>
       <div className="space-y-3">
+        {items.length === 0 && (
+          <Card className="shadow-card">
+            <CardContent className="text-muted-foreground p-6 text-center text-sm">
+              <Bell className="mx-auto mb-2 h-5 w-5" />
+              Nothing new right now.
+            </CardContent>
+          </Card>
+        )}
         {items.map((n) => {
           const Icon = ICON[n.kind];
           return (

@@ -533,3 +533,136 @@ export const upsertSubject = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { id };
   });
+
+const termStatusSchema = z.object({
+  termId: z.string().trim().min(1).max(80),
+  status: z.enum(["upcoming", "open", "closed"]),
+});
+
+/**
+ * Admins/principal open or close a term. Closing the term in session
+ * automatically opens the next term of that session and makes it current.
+ */
+export const setTermStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => termStatusSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const roles = await callerRoles(context);
+    if (!isAdmin(roles) && !roles.includes("principal")) {
+      throw new Error("Only admins or the principal can change term status");
+    }
+
+    const { data: term, error: termErr } = await context.supabase
+      .from("terms")
+      .select("id, session, name, sort_order")
+      .eq("id", data.termId)
+      .maybeSingle();
+    if (termErr) throw new Error(termErr.message);
+    if (!term) throw new Error("Term not found");
+
+    const { data: siblings } = await context.supabase
+      .from("terms")
+      .select("id, name, sort_order, status")
+      .eq("session", term.session)
+      .order("sort_order");
+    const list = (siblings ?? []) as { id: string; name: string; sort_order: number; status: string }[];
+
+    let currentTermId: string | null = await currentTermId_safe(context);
+    let openedName: string | null = null;
+
+    if (data.status === "open") {
+      // only one term may be in session at a time
+      for (const s of list) {
+        if (s.id !== term.id && s.status === "open") {
+          await context.supabase.from("terms").update({ status: "closed" }).eq("id", s.id);
+        }
+      }
+      await context.supabase.from("terms").update({ status: "open" }).eq("id", term.id);
+      currentTermId = term.id;
+      openedName = term.name as string;
+    } else if (data.status === "closed") {
+      await context.supabase.from("terms").update({ status: "closed" }).eq("id", term.id);
+      const next = list.find((s) => s.sort_order > (term.sort_order as number) && s.status !== "closed");
+      if (next) {
+        await context.supabase.from("terms").update({ status: "open" }).eq("id", next.id);
+        currentTermId = next.id;
+        openedName = next.name;
+      } else if (currentTermId === term.id) {
+        currentTermId = null;
+      }
+    } else {
+      await context.supabase.from("terms").update({ status: "upcoming" }).eq("id", term.id);
+      if (currentTermId === term.id) currentTermId = null;
+    }
+
+    const { error: setErr } = await context.supabase
+      .from("school_settings")
+      .upsert({ id: "default", current_term_id: currentTermId }, { onConflict: "id" });
+    if (setErr) throw new Error(setErr.message);
+
+    const title =
+      data.status === "closed"
+        ? `${term.name} (${term.session}) has been closed`
+        : data.status === "open"
+          ? `${term.name} (${term.session}) is now in session`
+          : `${term.name} (${term.session}) marked as upcoming`;
+    const body =
+      data.status === "closed" && openedName
+        ? `${term.name} is closed and score entry is locked. ${openedName} is now in session.`
+        : data.status === "closed"
+          ? `${term.name} is closed. Score entry for this term is now locked.`
+          : data.status === "open"
+            ? `${term.name} is open. Teachers can now enter and submit scores.`
+            : `${term.name} has been moved back to upcoming.`;
+
+    await context.supabase
+      .from("announcements")
+      .insert({ title, body, audience: "all", kind: "term", created_by: context.userId });
+
+    return { currentTermId, openedName };
+  });
+
+const announcementSchema = z.object({
+  title: z.string().trim().min(3).max(140),
+  body: z.string().trim().min(3).max(2000),
+  audience: z.enum(["all", "staff", "students"]).default("all"),
+});
+
+/** Leadership broadcasts a notification to everyone (or staff/students only). */
+export const broadcastAnnouncement = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => announcementSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const roles = await callerRoles(context);
+    if (!isLeadership(roles)) throw new Error("Only leadership can broadcast notifications");
+    const { error } = await context.supabase.from("announcements").insert({
+      title: data.title,
+      body: data.body,
+      audience: data.audience,
+      kind: "announcement",
+      created_by: context.userId,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const nextTermSchema = z.object({ nextTermBegins: z.string().trim().max(20).nullable() });
+
+/** Set the resumption date shown on dashboards and report cards. */
+export const setNextTermBegins = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => nextTermSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const roles = await callerRoles(context);
+    if (!isLeadership(roles)) throw new Error("Only leadership can change the resumption date");
+    const { error } = await context.supabase
+      .from("school_settings")
+      .upsert({ id: "default", next_term_begins: data.nextTermBegins || null }, { onConflict: "id" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+async function currentTermId_safe(context: { supabase: any }): Promise<string | null> {
+  const id = await currentTermId(context);
+  return id || null;
+}
