@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAcademics } from "./academics.functions";
-import { gradeFor, scoreTotals } from "./mock-data";
+import { gradeFor, scoreTotals, SCHOOL } from "./mock-data";
 
 export type Academics = Awaited<ReturnType<typeof getAcademics>>;
 export type ApiClass = Academics["classes"][number];
@@ -97,3 +97,48 @@ export function buildBroadsheet(data: Academics | undefined, classId: string) {
 }
 
 export { gradeFor, scoreTotals };
+
+export interface TermInfo {
+  id: string;
+  session: string;
+  name: string;
+  status: "open" | "closed" | "upcoming";
+  /** e.g. "2025/2026 · First Term" */
+  label: string;
+  isOpen: boolean;
+  nextTermBegins: string | null;
+}
+
+/** The term currently in session, derived from live school settings. */
+export function currentTerm(data: Academics | undefined): TermInfo {
+  const terms = data?.terms ?? [];
+  const id = data?.settings.currentTermId ?? "";
+  const term = terms.find((t) => t.id === id) ?? terms.find((t) => t.status === "open");
+  const session = term?.session ?? SCHOOL.session;
+  const name = term?.name ?? "No term in session";
+  const status = (term?.status as TermInfo["status"]) ?? "closed";
+  return {
+    id: term?.id ?? "",
+    session,
+    name,
+    status,
+    label: `${session} · ${name}`,
+    isOpen: status === "open",
+    nextTermBegins: data?.settings.nextTermBegins ?? null,
+  };
+}
+
+/** Next term that has not been closed yet, for resumption messaging. */
+export function nextTerm(data: Academics | undefined) {
+  const cur = currentTerm(data);
+  const terms = data?.terms ?? [];
+  const curRow = terms.find((t) => t.id === cur.id);
+  return (
+    terms.find(
+      (t) =>
+        t.session === (curRow?.session ?? cur.session) &&
+        t.sortOrder > (curRow?.sortOrder ?? 0) &&
+        t.status !== "closed",
+    ) ?? null
+  );
+}
