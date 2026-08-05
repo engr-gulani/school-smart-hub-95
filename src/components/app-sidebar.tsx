@@ -68,7 +68,14 @@ export function AppSidebar() {
     : [
         { title: "Score Entry", url: "/scores", icon: ClipboardEdit, show: can(role, "enter_scores") },
         { title: "Results & Broadsheet", url: "/results", icon: FileCheck2, show: can(role, "view_broadsheet") },
+        {
+          title: "Promotions",
+          url: "/promotions",
+          icon: GraduationCap,
+          show: can(role, "view_broadsheet"),
+        },
       ];
+
 
   const admin: NavItem[] = isStudent
     ? []

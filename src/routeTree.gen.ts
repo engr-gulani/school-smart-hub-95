@@ -20,6 +20,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppSessionsRouteImport } from './routes/_app.sessions'
 import { Route as AppScoresRouteImport } from './routes/_app.scores'
 import { Route as AppResultsRouteImport } from './routes/_app.results'
+import { Route as AppPromotionsRouteImport } from './routes/_app.promotions'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppMyResultsRouteImport } from './routes/_app.my-results'
 import { Route as AppMyProfileRouteImport } from './routes/_app.my-profile'
@@ -82,6 +83,11 @@ const AppResultsRoute = AppResultsRouteImport.update({
   path: '/results',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPromotionsRoute = AppPromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppNotificationsRoute = AppNotificationsRouteImport.update({
   id: '/notifications',
   path: '/notifications',
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/my-profile': typeof AppMyProfileRoute
   '/my-results': typeof AppMyResultsRoute
   '/notifications': typeof AppNotificationsRoute
+  '/promotions': typeof AppPromotionsRoute
   '/results': typeof AppResultsRoute
   '/scores': typeof AppScoresRoute
   '/sessions': typeof AppSessionsRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/my-profile': typeof AppMyProfileRoute
   '/my-results': typeof AppMyResultsRoute
   '/notifications': typeof AppNotificationsRoute
+  '/promotions': typeof AppPromotionsRoute
   '/results': typeof AppResultsRoute
   '/scores': typeof AppScoresRoute
   '/sessions': typeof AppSessionsRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/_app/my-profile': typeof AppMyProfileRoute
   '/_app/my-results': typeof AppMyResultsRoute
   '/_app/notifications': typeof AppNotificationsRoute
+  '/_app/promotions': typeof AppPromotionsRoute
   '/_app/results': typeof AppResultsRoute
   '/_app/scores': typeof AppScoresRoute
   '/_app/sessions': typeof AppSessionsRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/my-profile'
     | '/my-results'
     | '/notifications'
+    | '/promotions'
     | '/results'
     | '/scores'
     | '/sessions'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/my-profile'
     | '/my-results'
     | '/notifications'
+    | '/promotions'
     | '/results'
     | '/scores'
     | '/sessions'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/_app/my-profile'
     | '/_app/my-results'
     | '/_app/notifications'
+    | '/_app/promotions'
     | '/_app/results'
     | '/_app/scores'
     | '/_app/sessions'
@@ -323,6 +335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppResultsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/promotions': {
+      id: '/_app/promotions'
+      path: '/promotions'
+      fullPath: '/promotions'
+      preLoaderRoute: typeof AppPromotionsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/notifications': {
       id: '/_app/notifications'
       path: '/notifications'
@@ -381,6 +400,7 @@ interface AppRouteChildren {
   AppMyProfileRoute: typeof AppMyProfileRoute
   AppMyResultsRoute: typeof AppMyResultsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
+  AppPromotionsRoute: typeof AppPromotionsRoute
   AppResultsRoute: typeof AppResultsRoute
   AppScoresRoute: typeof AppScoresRoute
   AppSessionsRoute: typeof AppSessionsRoute
@@ -399,6 +419,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppMyProfileRoute: AppMyProfileRoute,
   AppMyResultsRoute: AppMyResultsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
+  AppPromotionsRoute: AppPromotionsRoute,
   AppResultsRoute: AppResultsRoute,
   AppScoresRoute: AppScoresRoute,
   AppSessionsRoute: AppSessionsRoute,
