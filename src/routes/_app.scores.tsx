@@ -149,16 +149,18 @@ function ScoresPage() {
         <div>
           <h1 className="font-display text-2xl font-semibold">Score entry</h1>
           <p className="text-muted-foreground text-sm">
-            Enter CA, assignment and exam scores. Totals and grades compute automatically and save to the portal.
+            {term.isOpen
+              ? `${term.label} is in session — entries below are recorded for this term only.`
+              : "No term is currently in session. Score sheets open automatically when the next term starts."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" className="gap-2" onClick={handleSave} disabled={saving || locked}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save scores
           </Button>
-          {stage === "draft" && (
+          {stage === "draft" && isCurrentTerm && (
             <Button size="sm" variant="outline" className="gap-2" onClick={handleSubmit}>
-              <Send className="h-4 w-4" /> Submit for approval
+              <Send className="h-4 w-4" /> Submit to class teacher
             </Button>
           )}
         </div>
@@ -175,29 +177,49 @@ function ScoresPage() {
             </p>
             <p className="text-muted-foreground mt-1 text-xs">{STAGE_LABEL[stage]}</p>
           </div>
-          <Select value={subjectId} onValueChange={setSubjectId}>
-            <SelectTrigger className="w-72">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {available.map((s) => {
-                const c = data?.classes.find((x) => x.id === s.classId);
-                return (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name} · {c?.name}
+          <div className="flex flex-wrap gap-2">
+            <Select value={termId} onValueChange={setTermId}>
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="Term" />
+              </SelectTrigger>
+              <SelectContent>
+                {allTerms.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.session} · {t.name}
+                    {t.status === "open" ? " (current)" : t.status === "closed" ? " (closed)" : ""}
                   </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={subjectId} onValueChange={setSubjectId}>
+              <SelectTrigger className="w-72">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {available.map((s) => {
+                  const c = data?.classes.find((x) => x.id === s.classId);
+                  return (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} · {c?.name}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {locked && (
             <p className="text-muted-foreground mb-3 flex items-center gap-2 rounded-md border p-2 text-xs">
-              <Lock className="h-3.5 w-3.5" /> These scores are locked — the class result is already in the
-              approval workflow.
+              <Lock className="h-3.5 w-3.5" />{" "}
+              {!isCurrentTerm
+                ? viewTerm
+                  ? `${viewTerm.session} · ${viewTerm.name} is not the term in session — these scores are view-only.`
+                  : "No term is in session — score entry is closed."
+                : "These scores are locked — the class result is already in the approval workflow."}
             </p>
           )}
+
           <table className="w-full text-sm">
             <thead>
               <tr className="text-muted-foreground border-b text-left text-xs tracking-wide uppercase">
