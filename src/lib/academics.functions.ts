@@ -666,3 +666,119 @@ async function currentTermId_safe(context: { supabase: any }): Promise<string | 
   const id = await currentTermId(context);
   return id || null;
 }
+
+const compileSchema = z.object({
+  session: z.string().trim().min(4).max(40),
+  apply: z.boolean().optional(),
+});
+
+/**
+ * End-of-session compilation: averages every term of the session per student,
+ * then records Promoted (>= 40), Promoted on probation (>= 37) or Demoted (< 37).
+ * Only runs once every term of the session is closed.
+ */
+export const compileSessionPromotions = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => compileSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const roles = await callerRoles(context);
+    if (!isLeadership(roles)) {
+      throw new Error("Only admins, the principal or the vice principal can compile promotions");
+    }
+
+    const { data: termRows, error: termErr } = await context.supabase
+      .from("terms")
+      .select("id, name, sort_order, status")
+      .eq("session", data.session)
+      .order("sort_order");
+    if (termErr) throw new Error(termErr.message);
+    const terms = (termRows ?? []) as { id: string; name: string; sort_order: number; status: string }[];
+    if (!terms.length) throw new Error("No terms found for that session");
+
+    const stillOpen = terms.filter((t) => t.status !== "closed");
+    if (stillOpen.length) {
+      throw new Error(
+        `Close ${stillOpen.map((t) => t.name).join(", ")} before compiling the session result`,
+      );
+    }
+
+    const termIds = terms.map((t) => t.id);
+
+    const [{ data: students }, { data: classes }, { data: subjects }, { data: scores }] = await Promise.all([
+      context.supabase.from("students").select("id, class_id"),
+      context.supabase.from("classes").select("id, sort_order"),
+      context.supabase.from("subjects").select("id, class_id"),
+      context.supabase.from("scores").select("student_id, subject_id, term_id, ca1, ca2, assignment, exam").in("term_id", termIds),
+    ]);
+
+    const classList = ((classes ?? []) as any[]).sort((a, b) => a.sort_order - b.sort_order);
+    const subjectsByClass = new Map<string, string[]>();
+    for (const s of (subjects ?? []) as any[]) {
+      const arr = subjectsByClass.get(s.class_id) ?? [];
+      arr.push(s.id);
+      subjectsByClass.set(s.class_id, arr);
+    }
+
+    const rows: any[] = [];
+    for (const st of ((students ?? []) as any[])) {
+      const subjectIds = subjectsByClass.get(st.class_id) ?? [];
+      const termAverages: number[] = [];
+      for (const tid of termIds) {
+        const mine = ((scores ?? []) as any[]).filter(
+          (sc) => sc.student_id === st.id && sc.term_id === tid && subjectIds.includes(sc.subject_id),
+        );
+        if (!mine.length) continue;
+        const total = mine.reduce((a, sc) => a + sc.ca1 + sc.ca2 + sc.assignment + sc.exam, 0);
+        termAverages.push(total / subjectIds.length);
+      }
+      if (!termAverages.length) continue;
+
+      const average = Math.round((termAverages.reduce((a, b) => a + b, 0) / termAverages.length) * 10) / 10;
+      const decision = average >= 40 ? "promoted" : average >= 37 ? "probation" : "demoted";
+
+      const idx = classList.findIndex((c) => c.id === st.class_id);
+      const nextClass = idx >= 0 && idx < classList.length - 1 ? classList[idx + 1].id : st.class_id;
+      const toClassId = decision === "demoted" ? st.class_id : nextClass;
+
+      rows.push({
+        student_id: st.id,
+        session: data.session,
+        from_class_id: st.class_id,
+        to_class_id: toClassId,
+        decision,
+        average,
+        terms_counted: termAverages.length,
+        decided_by: context.userId,
+      });
+    }
+
+    if (!rows.length) throw new Error("No scores recorded for this session yet");
+
+    const { error } = await context.supabase
+      .from("promotions")
+      .upsert(rows, { onConflict: "student_id,session" });
+    if (error) throw new Error(error.message);
+
+    // Optionally move promoted students into their next class.
+    let moved = 0;
+    if (data.apply) {
+      for (const r of rows) {
+        if (r.decision === "demoted" || r.to_class_id === r.from_class_id) continue;
+        const { error: mvErr } = await context.supabase
+          .from("students")
+          .update({ class_id: r.to_class_id })
+          .eq("id", r.student_id);
+        if (!mvErr) moved += 1;
+      }
+    }
+
+    await context.supabase.from("announcements").insert({
+      title: `${data.session} session result compiled`,
+      body: `Final averages for ${data.session} have been compiled across ${terms.length} terms. Promotion decisions are now available.`,
+      audience: "all",
+      kind: "term",
+      created_by: context.userId,
+    });
+
+    return { compiled: rows.length, moved };
+  });

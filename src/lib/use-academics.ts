@@ -42,8 +42,21 @@ export function useRefreshAcademics() {
   return () => qc.invalidateQueries({ queryKey: academicsQueryKey });
 }
 
-export function stageFor(data: Academics | undefined, classId: string): WorkflowStage {
-  const row = data?.approvals.find((a) => a.classId === classId);
+/** The term used for reads when a caller doesn't specify one. */
+function resolveTermId(data: Academics | undefined, termId?: string) {
+  if (termId) return termId;
+  const settingsTerm = data?.settings.currentTermId;
+  if (settingsTerm) return settingsTerm;
+  return data?.terms.find((t) => t.status === "open")?.id ?? "";
+}
+
+export function stageFor(
+  data: Academics | undefined,
+  classId: string,
+  termId?: string,
+): WorkflowStage {
+  const tid = resolveTermId(data, termId);
+  const row = data?.approvals.find((a) => a.classId === classId && (!tid || a.termId === tid));
   return (row?.stage as WorkflowStage) ?? "draft";
 }
 
@@ -64,10 +77,11 @@ export interface BroadsheetRow {
   position: number;
 }
 
-export function buildBroadsheet(data: Academics | undefined, classId: string) {
+export function buildBroadsheet(data: Academics | undefined, classId: string, termId?: string) {
+  const tid = resolveTermId(data, termId);
   const subjects = (data?.subjects ?? []).filter((s) => s.classId === classId);
   const students = (data?.students ?? []).filter((s) => s.classId === classId);
-  const scores = data?.scores ?? [];
+  const scores = (data?.scores ?? []).filter((s) => !tid || s.termId === tid);
 
   const rows = students.map((student) => {
     const perSubject = subjects.map((sub) => {
@@ -95,6 +109,53 @@ export function buildBroadsheet(data: Academics | undefined, classId: string) {
 
   return { subjects, rows: sorted as BroadsheetRow[] };
 }
+
+/** All terms of a session, ordered. */
+export function sessionTerms(data: Academics | undefined, session: string) {
+  return (data?.terms ?? [])
+    .filter((t) => t.session === session)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export type PromotionDecision = "promoted" | "probation" | "demoted";
+
+export const PROMOTION_LABEL: Record<PromotionDecision, string> = {
+  promoted: "Promoted",
+  probation: "Promoted on probation",
+  demoted: "Demoted",
+};
+
+export function decisionFor(average: number): PromotionDecision {
+  if (average >= 40) return "promoted";
+  if (average >= 37) return "probation";
+  return "demoted";
+}
+
+/** Per-student averages across every term of a session (client preview of compilation). */
+export function sessionCompilation(data: Academics | undefined, session: string, classId?: string) {
+  const terms = sessionTerms(data, session);
+  const termIds = terms.map((t) => t.id);
+  const students = (data?.students ?? []).filter((s) => !classId || s.classId === classId);
+
+  return students.map((student) => {
+    const perTerm = terms.map((t) => {
+      const { rows } = buildBroadsheet(data, student.classId, t.id);
+      const row = rows.find((r) => r.student.id === student.id);
+      return { termId: t.id, termName: t.name, average: row?.average ?? 0, hasScores: (row?.total ?? 0) > 0 };
+    });
+    const counted = perTerm.filter((p) => p.hasScores);
+    const average = counted.length ? counted.reduce((a, b) => a + b.average, 0) / counted.length : 0;
+    return {
+      student,
+      perTerm,
+      termsCounted: counted.length,
+      average: Math.round(average * 10) / 10,
+      decision: decisionFor(average),
+      termIds,
+    };
+  });
+}
+
 
 export { gradeFor, scoreTotals };
 

@@ -11,6 +11,7 @@ import { Save, Send, Loader2, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { saveSubjectScores, updateResultApproval } from "@/lib/academics.functions";
 import {
+  currentTerm,
   gradeFor,
   stageFor,
   subjectsForTeacher,
@@ -18,6 +19,7 @@ import {
   useRefreshAcademics,
   STAGE_LABEL,
 } from "@/lib/use-academics";
+
 
 export const Route = createFileRoute("/_app/scores")({
   head: () => ({
@@ -39,6 +41,18 @@ function ScoresPage() {
   const save = useServerFn(saveSubjectScores);
   const advance = useServerFn(updateResultApproval);
 
+  const term = currentTerm(data);
+  const allTerms = useMemo(
+    () => (data?.terms ?? []).slice().sort((a, b) => (a.session + a.sortOrder).localeCompare(b.session + b.sortOrder)),
+    [data],
+  );
+  const [termId, setTermId] = useState("");
+  useEffect(() => {
+    if (!termId && term.id) setTermId(term.id);
+  }, [term.id, termId]);
+  const viewTerm = allTerms.find((t) => t.id === termId);
+  const isCurrentTerm = !!term.id && termId === term.id && term.isOpen;
+
   const available = useMemo(
     () => subjectsForTeacher(data, user.id, user.role),
     [data, user.id, user.role],
@@ -51,8 +65,9 @@ function ScoresPage() {
 
   const subject = available.find((s) => s.id === subjectId) ?? data?.subjects.find((s) => s.id === subjectId);
   const classInfo = data?.classes.find((c) => c.id === subject?.classId);
-  const stage = stageFor(data, subject?.classId ?? "");
-  const locked = stage !== "draft" && user.role !== "school_admin" && user.role !== "super_admin";
+  const stage = stageFor(data, subject?.classId ?? "", termId);
+  const isPrivileged = user.role === "school_admin" || user.role === "super_admin";
+  const locked = (!isCurrentTerm || stage !== "draft") && !isPrivileged;
 
   const roster = useMemo(
     () => (data?.students ?? []).filter((s) => s.classId === subject?.classId),
@@ -66,13 +81,16 @@ function ScoresPage() {
     if (!data || !subject) return;
     const map: Draft = {};
     for (const st of roster) {
-      const sc = data.scores.find((x) => x.studentId === st.id && x.subjectId === subject.id);
+      const sc = data.scores.find(
+        (x) => x.studentId === st.id && x.subjectId === subject.id && (!termId || x.termId === termId),
+      );
       map[st.id] = sc
         ? { ca1: sc.ca1, ca2: sc.ca2, assignment: sc.assignment, exam: sc.exam }
         : { ca1: 0, ca2: 0, assignment: 0, exam: 0 };
     }
     setDraft(map);
-  }, [data, subject?.id, roster]);
+  }, [data, subject?.id, roster, termId]);
+
 
   const update = (studentId: string, key: string, val: number) => {
     const max = MAX[key] ?? 100;
@@ -87,7 +105,7 @@ function ScoresPage() {
     setSaving(true);
     try {
       const entries = roster.map((st) => ({ studentId: st.id, ...(draft[st.id] ?? { ca1: 0, ca2: 0, assignment: 0, exam: 0 }) }));
-      const res = await save({ data: { subjectId: subject.id, entries } });
+      const res = await save({ data: { subjectId: subject.id, termId, entries } });
       toast.success(`Saved ${res.saved} score entries`);
       await refresh();
     } catch (e: any) {
@@ -100,13 +118,14 @@ function ScoresPage() {
   const handleSubmit = async () => {
     if (!subject) return;
     try {
-      await advance({ data: { classId: subject.classId, action: "submit" } });
+      await advance({ data: { classId: subject.classId, termId, action: "submit" } });
       toast.success("Results submitted to the Vice Principal for approval");
       await refresh();
     } catch (e: any) {
       toast.error(e?.message ?? "Could not submit results");
     }
   };
+
 
   if (isLoading) {
     return <p className="text-muted-foreground text-sm">Loading your subjects…</p>;
@@ -130,16 +149,18 @@ function ScoresPage() {
         <div>
           <h1 className="font-display text-2xl font-semibold">Score entry</h1>
           <p className="text-muted-foreground text-sm">
-            Enter CA, assignment and exam scores. Totals and grades compute automatically and save to the portal.
+            {term.isOpen
+              ? `${term.label} is in session — entries below are recorded for this term only.`
+              : "No term is currently in session. Score sheets open automatically when the next term starts."}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" className="gap-2" onClick={handleSave} disabled={saving || locked}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save scores
           </Button>
-          {stage === "draft" && (
+          {stage === "draft" && isCurrentTerm && (
             <Button size="sm" variant="outline" className="gap-2" onClick={handleSubmit}>
-              <Send className="h-4 w-4" /> Submit for approval
+              <Send className="h-4 w-4" /> Submit to class teacher
             </Button>
           )}
         </div>
@@ -156,29 +177,49 @@ function ScoresPage() {
             </p>
             <p className="text-muted-foreground mt-1 text-xs">{STAGE_LABEL[stage]}</p>
           </div>
-          <Select value={subjectId} onValueChange={setSubjectId}>
-            <SelectTrigger className="w-72">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {available.map((s) => {
-                const c = data?.classes.find((x) => x.id === s.classId);
-                return (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.name} · {c?.name}
+          <div className="flex flex-wrap gap-2">
+            <Select value={termId} onValueChange={setTermId}>
+              <SelectTrigger className="w-56">
+                <SelectValue placeholder="Term" />
+              </SelectTrigger>
+              <SelectContent>
+                {allTerms.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.session} · {t.name}
+                    {t.status === "open" ? " (current)" : t.status === "closed" ? " (closed)" : ""}
                   </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={subjectId} onValueChange={setSubjectId}>
+              <SelectTrigger className="w-72">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {available.map((s) => {
+                  const c = data?.classes.find((x) => x.id === s.classId);
+                  return (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name} · {c?.name}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {locked && (
             <p className="text-muted-foreground mb-3 flex items-center gap-2 rounded-md border p-2 text-xs">
-              <Lock className="h-3.5 w-3.5" /> These scores are locked — the class result is already in the
-              approval workflow.
+              <Lock className="h-3.5 w-3.5" />{" "}
+              {!isCurrentTerm
+                ? viewTerm
+                  ? `${viewTerm.session} · ${viewTerm.name} is not the term in session — these scores are view-only.`
+                  : "No term is in session — score entry is closed."
+                : "These scores are locked — the class result is already in the approval workflow."}
             </p>
           )}
+
           <table className="w-full text-sm">
             <thead>
               <tr className="text-muted-foreground border-b text-left text-xs tracking-wide uppercase">

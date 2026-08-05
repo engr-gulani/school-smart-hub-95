@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,7 @@ import { useAuth, can } from "@/lib/auth-context";
 import { updateResultApproval } from "@/lib/academics.functions";
 import {
   buildBroadsheet,
+  currentTerm,
   gradeFor,
   stageFor,
   useAcademics,
@@ -37,9 +38,20 @@ function ResultsPage() {
   const [classId, setClassId] = useState("c-ss1a");
   const [busy, setBusy] = useState(false);
 
+  const term = currentTerm(data);
+  const allTerms = useMemo(
+    () => (data?.terms ?? []).slice().sort((a, b) => (a.session + a.sortOrder).localeCompare(b.session + b.sortOrder)),
+    [data],
+  );
+  const [termId, setTermId] = useState("");
+  useEffect(() => {
+    if (!termId && term.id) setTermId(term.id);
+  }, [term.id, termId]);
+  const isCurrentTerm = !!term.id && termId === term.id && term.isOpen;
+
   const canSeeReports = user.role !== "subject_teacher";
-  const stage = stageFor(data, classId);
-  const { subjects, rows } = useMemo(() => buildBroadsheet(data, classId), [data, classId]);
+  const stage = stageFor(data, classId, termId);
+  const { subjects, rows } = useMemo(() => buildBroadsheet(data, classId, termId), [data, classId, termId]);
 
   const classAvg = rows.length ? Math.round((rows.reduce((a, r) => a + r.average, 0) / rows.length) * 10) / 10 : 0;
   const passed = rows.filter((r) => r.average >= 50).length;
@@ -48,7 +60,7 @@ function ResultsPage() {
   const act = async (action: "submit" | "vp_approve" | "principal_approve" | "publish" | "reset", msg: string) => {
     setBusy(true);
     try {
-      await advance({ data: { classId, action } });
+      await advance({ data: { classId, termId, action } });
       toast.success(msg);
       await refresh();
     } catch (e: any) {
@@ -58,6 +70,7 @@ function ResultsPage() {
     }
   };
 
+
   if (isLoading) return <p className="text-muted-foreground text-sm">Loading results…</p>;
 
   return (
@@ -65,9 +78,26 @@ function ResultsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold">Results & broadsheet</h1>
-          <p className="text-muted-foreground text-sm">Auto-computed totals, positions and grade distribution.</p>
+          <p className="text-muted-foreground text-sm">
+            {isCurrentTerm
+              ? `${term.label} — actions are open for the term in session.`
+              : "Viewing a term that is not in session. Records are read-only."}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Select value={termId} onValueChange={setTermId}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Term" />
+            </SelectTrigger>
+            <SelectContent>
+              {allTerms.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.session} · {t.name}
+                  {t.status === "open" ? " (current)" : t.status === "closed" ? " (closed)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={classId} onValueChange={setClassId}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -80,6 +110,7 @@ function ResultsPage() {
               ))}
             </SelectContent>
           </Select>
+
           {canSeeReports && (
           <Link to="/report-cards/$classId" params={{ classId }} search={{ print: "1" }} target="_blank">
             <Button size="sm" className="gap-2">
@@ -121,22 +152,22 @@ function ResultsPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {stage === "draft" && can(user.role, "enter_scores") && (
+            {stage === "draft" && isCurrentTerm && can(user.role, "enter_scores") && (
               <Button size="sm" disabled={busy} onClick={() => act("submit", "Submitted to the Vice Principal")}>
                 Submit for approval
               </Button>
             )}
-            {stage === "vp_review" && can(user.role, "vp_approve") && (
+            {stage === "vp_review" && isCurrentTerm && can(user.role, "vp_approve") && (
               <Button size="sm" disabled={busy} className="gap-2" onClick={() => act("vp_approve", "Approved — sent to the Principal")}>
                 <FileCheck2 className="h-4 w-4" /> VP approve
               </Button>
             )}
-            {stage === "principal_review" && can(user.role, "principal_approve") && (
+            {stage === "principal_review" && isCurrentTerm && can(user.role, "principal_approve") && (
               <Button size="sm" disabled={busy} className="gap-2" onClick={() => act("principal_approve", "Principal approval recorded")}>
                 <FileCheck2 className="h-4 w-4" /> Principal approve
               </Button>
             )}
-            {stage === "approved" && can(user.role, "principal_approve") && (
+            {stage === "approved" && isCurrentTerm && can(user.role, "principal_approve") && (
               <Button size="sm" disabled={busy} className="gap-2" onClick={() => act("publish", "Results published to students")}>
                 <FileCheck2 className="h-4 w-4" /> Publish results
               </Button>
@@ -144,7 +175,7 @@ function ResultsPage() {
             {stage === "published" && (
               <Badge className="bg-success/15 text-success border-success/30">Published</Badge>
             )}
-            {stage !== "draft" && (can(user.role, "vp_approve") || can(user.role, "principal_approve")) && (
+            {stage !== "draft" && isCurrentTerm && (can(user.role, "vp_approve") || can(user.role, "principal_approve")) && (
               <Button size="sm" variant="outline" disabled={busy} className="gap-2" onClick={() => act("reset", "Returned to the teacher for corrections")}>
                 <Undo2 className="h-4 w-4" /> Return to teacher
               </Button>
