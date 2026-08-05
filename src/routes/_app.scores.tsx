@@ -11,6 +11,7 @@ import { Save, Send, Loader2, Lock } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { saveSubjectScores, updateResultApproval } from "@/lib/academics.functions";
 import {
+  currentTerm,
   gradeFor,
   stageFor,
   subjectsForTeacher,
@@ -18,6 +19,7 @@ import {
   useRefreshAcademics,
   STAGE_LABEL,
 } from "@/lib/use-academics";
+
 
 export const Route = createFileRoute("/_app/scores")({
   head: () => ({
