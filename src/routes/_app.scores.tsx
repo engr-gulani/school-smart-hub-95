@@ -105,7 +105,7 @@ function ScoresPage() {
     setSaving(true);
     try {
       const entries = roster.map((st) => ({ studentId: st.id, ...(draft[st.id] ?? { ca1: 0, ca2: 0, assignment: 0, exam: 0 }) }));
-      const res = await save({ data: { subjectId: subject.id, entries } });
+      const res = await save({ data: { subjectId: subject.id, termId, entries } });
       toast.success(`Saved ${res.saved} score entries`);
       await refresh();
     } catch (e: any) {
@@ -118,13 +118,14 @@ function ScoresPage() {
   const handleSubmit = async () => {
     if (!subject) return;
     try {
-      await advance({ data: { classId: subject.classId, action: "submit" } });
+      await advance({ data: { classId: subject.classId, termId, action: "submit" } });
       toast.success("Results submitted to the Vice Principal for approval");
       await refresh();
     } catch (e: any) {
       toast.error(e?.message ?? "Could not submit results");
     }
   };
+
 
   if (isLoading) {
     return <p className="text-muted-foreground text-sm">Loading your subjects…</p>;
