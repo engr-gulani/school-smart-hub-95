@@ -39,6 +39,18 @@ function ScoresPage() {
   const save = useServerFn(saveSubjectScores);
   const advance = useServerFn(updateResultApproval);
 
+  const term = currentTerm(data);
+  const allTerms = useMemo(
+    () => (data?.terms ?? []).slice().sort((a, b) => (a.session + a.sortOrder).localeCompare(b.session + b.sortOrder)),
+    [data],
+  );
+  const [termId, setTermId] = useState("");
+  useEffect(() => {
+    if (!termId && term.id) setTermId(term.id);
+  }, [term.id, termId]);
+  const viewTerm = allTerms.find((t) => t.id === termId);
+  const isCurrentTerm = !!term.id && termId === term.id && term.isOpen;
+
   const available = useMemo(
     () => subjectsForTeacher(data, user.id, user.role),
     [data, user.id, user.role],
@@ -51,8 +63,9 @@ function ScoresPage() {
 
   const subject = available.find((s) => s.id === subjectId) ?? data?.subjects.find((s) => s.id === subjectId);
   const classInfo = data?.classes.find((c) => c.id === subject?.classId);
-  const stage = stageFor(data, subject?.classId ?? "");
-  const locked = stage !== "draft" && user.role !== "school_admin" && user.role !== "super_admin";
+  const stage = stageFor(data, subject?.classId ?? "", termId);
+  const isPrivileged = user.role === "school_admin" || user.role === "super_admin";
+  const locked = (!isCurrentTerm || stage !== "draft") && !isPrivileged;
 
   const roster = useMemo(
     () => (data?.students ?? []).filter((s) => s.classId === subject?.classId),
@@ -66,13 +79,16 @@ function ScoresPage() {
     if (!data || !subject) return;
     const map: Draft = {};
     for (const st of roster) {
-      const sc = data.scores.find((x) => x.studentId === st.id && x.subjectId === subject.id);
+      const sc = data.scores.find(
+        (x) => x.studentId === st.id && x.subjectId === subject.id && (!termId || x.termId === termId),
+      );
       map[st.id] = sc
         ? { ca1: sc.ca1, ca2: sc.ca2, assignment: sc.assignment, exam: sc.exam }
         : { ca1: 0, ca2: 0, assignment: 0, exam: 0 };
     }
     setDraft(map);
-  }, [data, subject?.id, roster]);
+  }, [data, subject?.id, roster, termId]);
+
 
   const update = (studentId: string, key: string, val: number) => {
     const max = MAX[key] ?? 100;
