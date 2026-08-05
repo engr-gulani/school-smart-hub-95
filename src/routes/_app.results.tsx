@@ -11,6 +11,7 @@ import { useAuth, can } from "@/lib/auth-context";
 import { updateResultApproval } from "@/lib/academics.functions";
 import {
   buildBroadsheet,
+  currentTerm,
   gradeFor,
   stageFor,
   useAcademics,
@@ -37,9 +38,20 @@ function ResultsPage() {
   const [classId, setClassId] = useState("c-ss1a");
   const [busy, setBusy] = useState(false);
 
+  const term = currentTerm(data);
+  const allTerms = useMemo(
+    () => (data?.terms ?? []).slice().sort((a, b) => (a.session + a.sortOrder).localeCompare(b.session + b.sortOrder)),
+    [data],
+  );
+  const [termId, setTermId] = useState("");
+  useEffect(() => {
+    if (!termId && term.id) setTermId(term.id);
+  }, [term.id, termId]);
+  const isCurrentTerm = !!term.id && termId === term.id && term.isOpen;
+
   const canSeeReports = user.role !== "subject_teacher";
-  const stage = stageFor(data, classId);
-  const { subjects, rows } = useMemo(() => buildBroadsheet(data, classId), [data, classId]);
+  const stage = stageFor(data, classId, termId);
+  const { subjects, rows } = useMemo(() => buildBroadsheet(data, classId, termId), [data, classId, termId]);
 
   const classAvg = rows.length ? Math.round((rows.reduce((a, r) => a + r.average, 0) / rows.length) * 10) / 10 : 0;
   const passed = rows.filter((r) => r.average >= 50).length;
@@ -48,7 +60,7 @@ function ResultsPage() {
   const act = async (action: "submit" | "vp_approve" | "principal_approve" | "publish" | "reset", msg: string) => {
     setBusy(true);
     try {
-      await advance({ data: { classId, action } });
+      await advance({ data: { classId, termId, action } });
       toast.success(msg);
       await refresh();
     } catch (e: any) {
@@ -57,6 +69,7 @@ function ResultsPage() {
       setBusy(false);
     }
   };
+
 
   if (isLoading) return <p className="text-muted-foreground text-sm">Loading results…</p>;
 
