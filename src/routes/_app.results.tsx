@@ -78,9 +78,26 @@ function ResultsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-semibold">Results & broadsheet</h1>
-          <p className="text-muted-foreground text-sm">Auto-computed totals, positions and grade distribution.</p>
+          <p className="text-muted-foreground text-sm">
+            {isCurrentTerm
+              ? `${term.label} — actions are open for the term in session.`
+              : "Viewing a term that is not in session. Records are read-only."}
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <Select value={termId} onValueChange={setTermId}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Term" />
+            </SelectTrigger>
+            <SelectContent>
+              {allTerms.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.session} · {t.name}
+                  {t.status === "open" ? " (current)" : t.status === "closed" ? " (closed)" : ""}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={classId} onValueChange={setClassId}>
             <SelectTrigger className="w-40">
               <SelectValue />
@@ -93,6 +110,7 @@ function ResultsPage() {
               ))}
             </SelectContent>
           </Select>
+
           {canSeeReports && (
           <Link to="/report-cards/$classId" params={{ classId }} search={{ print: "1" }} target="_blank">
             <Button size="sm" className="gap-2">
