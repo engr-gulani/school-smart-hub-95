@@ -152,22 +152,22 @@ function ResultsPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {stage === "draft" && can(user.role, "enter_scores") && (
+            {stage === "draft" && isCurrentTerm && can(user.role, "enter_scores") && (
               <Button size="sm" disabled={busy} onClick={() => act("submit", "Submitted to the Vice Principal")}>
                 Submit for approval
               </Button>
             )}
-            {stage === "vp_review" && can(user.role, "vp_approve") && (
+            {stage === "vp_review" && isCurrentTerm && can(user.role, "vp_approve") && (
               <Button size="sm" disabled={busy} className="gap-2" onClick={() => act("vp_approve", "Approved — sent to the Principal")}>
                 <FileCheck2 className="h-4 w-4" /> VP approve
               </Button>
             )}
-            {stage === "principal_review" && can(user.role, "principal_approve") && (
+            {stage === "principal_review" && isCurrentTerm && can(user.role, "principal_approve") && (
               <Button size="sm" disabled={busy} className="gap-2" onClick={() => act("principal_approve", "Principal approval recorded")}>
                 <FileCheck2 className="h-4 w-4" /> Principal approve
               </Button>
             )}
-            {stage === "approved" && can(user.role, "principal_approve") && (
+            {stage === "approved" && isCurrentTerm && can(user.role, "principal_approve") && (
               <Button size="sm" disabled={busy} className="gap-2" onClick={() => act("publish", "Results published to students")}>
                 <FileCheck2 className="h-4 w-4" /> Publish results
               </Button>
@@ -175,7 +175,7 @@ function ResultsPage() {
             {stage === "published" && (
               <Badge className="bg-success/15 text-success border-success/30">Published</Badge>
             )}
-            {stage !== "draft" && (can(user.role, "vp_approve") || can(user.role, "principal_approve")) && (
+            {stage !== "draft" && isCurrentTerm && (can(user.role, "vp_approve") || can(user.role, "principal_approve")) && (
               <Button size="sm" variant="outline" disabled={busy} className="gap-2" onClick={() => act("reset", "Returned to the teacher for corrections")}>
                 <Undo2 className="h-4 w-4" /> Return to teacher
               </Button>
