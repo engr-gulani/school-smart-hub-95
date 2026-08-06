@@ -92,7 +92,9 @@ function BulkReportCards() {
               average={r.average}
               position={r.position}
               editable={editable}
+              termId={termId}
             />
+
           ))}
         </div>
       )}
