@@ -120,9 +120,13 @@ export function ReportCardSheet({
   average,
   position,
   editable = false,
+  termId,
 }: Props) {
-  const SCORES = data.scores;
-  const { state, update } = useAssessment(student.id);
+  const activeTermId = termId ?? data.settings.currentTermId ?? "";
+  const term = data.terms.find((t) => t.id === activeTermId);
+  const SCORES = data.scores.filter((s) => !activeTermId || s.termId === activeTermId);
+  const { state, update } = useAssessment(`${student.id}:${activeTermId}`);
+
 
   // Names come straight from the accounts the admin creates, so reassigning a
   // class teacher or principal updates every report card automatically.
