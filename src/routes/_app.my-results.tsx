@@ -1,11 +1,18 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText, Lock } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
-import { useAcademics, buildBroadsheet, stageFor, gradeFor, scoreTotals } from "@/lib/use-academics";
-import { ordinal, SCHOOL } from "@/lib/mock-data";
+import {
+  useAcademics,
+  buildBroadsheet,
+  gradeFor,
+  scoreTotals,
+  publishedTerms,
+} from "@/lib/use-academics";
+import { ordinal } from "@/lib/mock-data";
 
 export const Route = createFileRoute("/_app/my-results")({
   head: () => ({
@@ -18,15 +25,25 @@ export const Route = createFileRoute("/_app/my-results")({
 });
 
 function MyResults() {
-  const { user } = useAuth();
   const { data, isLoading } = useAcademics();
+
+  const studentId = data?.me.studentId ?? null;
+  const student = data?.students.find((s) => s.id === studentId);
+  const terms = publishedTerms(data, student?.classId ?? "");
+
+  const [termId, setTermId] = useState("");
+
+  // Default to the term in session when it's published, else the newest published term.
+  useEffect(() => {
+    if (!terms.length) return;
+    const current = data?.settings.currentTermId;
+    const preferred = terms.find((t) => t.id === current)?.id ?? terms[0]!.id;
+    setTermId((prev) => (terms.some((t) => t.id === prev) ? prev : preferred));
+  }, [terms.map((t) => t.id).join(","), data?.settings.currentTermId]);
 
   if (isLoading) {
     return <p className="text-muted-foreground py-16 text-center text-sm">Loading your results…</p>;
   }
-
-  const studentId = data?.me.studentId ?? null;
-  const student = data?.students.find((s) => s.id === studentId);
 
   if (!student) {
     return (
@@ -40,9 +57,8 @@ function MyResults() {
   }
 
   const cls = data!.classes.find((c) => c.id === student.classId);
-  const published = stageFor(data, student.classId) === "published";
 
-  if (!published) {
+  if (!terms.length) {
     return (
       <div className="mx-auto max-w-lg py-16 text-center">
         <div className="bg-muted mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full">
@@ -50,13 +66,15 @@ function MyResults() {
         </div>
         <h1 className="font-display text-2xl font-semibold">Results not yet published</h1>
         <p className="text-muted-foreground mt-2 text-sm">
-          Your class results are still under review. You'll be notified as soon as they are released by the Principal.
+          Your class results are still under review. They appear here automatically as soon as the Principal
+          publishes them.
         </p>
       </div>
     );
   }
 
-  const { subjects, rows } = buildBroadsheet(data, student.classId);
+  const activeTerm = terms.find((t) => t.id === termId) ?? terms[0]!;
+  const { subjects, rows } = buildBroadsheet(data, student.classId, activeTerm.id);
   const myRow = rows.find((r) => r.student.id === student.id);
 
   return (
@@ -65,14 +83,28 @@ function MyResults() {
         <div>
           <h1 className="font-display text-2xl font-semibold">My results</h1>
           <p className="text-muted-foreground text-sm">
-            {cls?.name ?? student.classId} · {SCHOOL.term} · Published
+            {cls?.name ?? student.classId} · {activeTerm.session} · {activeTerm.name} · Published
           </p>
         </div>
-        <Link to="/report-card/$studentId" params={{ studentId: student.id }}>
-          <Button size="sm" className="gap-2">
-            <FileText className="h-4 w-4" /> Download report card
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Select value={activeTerm.id} onValueChange={setTermId}>
+            <SelectTrigger className="w-[230px]">
+              <SelectValue placeholder="Select term" />
+            </SelectTrigger>
+            <SelectContent>
+              {terms.map((t) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.session} · {t.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Link to="/report-card/$studentId" params={{ studentId: student.id }} search={{ term: activeTerm.id }}>
+            <Button size="sm" className="gap-2">
+              <FileText className="h-4 w-4" /> Report card
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
@@ -102,7 +134,9 @@ function MyResults() {
             </thead>
             <tbody>
               {subjects.map((sub) => {
-                const sc = data!.scores.find((x) => x.studentId === student.id && x.subjectId === sub.id);
+                const sc = data!.scores.find(
+                  (x) => x.studentId === student.id && x.subjectId === sub.id && x.termId === activeTerm.id,
+                );
                 const total = sc ? scoreTotals(sc).total : 0;
                 const g = gradeFor(total);
                 return (
