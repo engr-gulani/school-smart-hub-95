@@ -281,7 +281,7 @@ export function ReportCardSheet({
       <footer className="text-muted-foreground mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-xs">
         <div>
           <p>
-            Next term begins: <span className="text-foreground font-medium">{SCHOOL.nextTermBegins}</span>
+            Next term begins: <span className="text-foreground font-medium">{data.settings.nextTermBegins ?? SCHOOL.nextTermBegins}</span>
           </p>
           <p>
             Attendance: <span className="text-foreground font-medium">58 / 60 days</span> · Conduct:{" "}
