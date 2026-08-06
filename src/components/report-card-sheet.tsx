@@ -14,6 +14,8 @@ interface Props {
   position: number;
   /** When true, comments, signatures and behavioural ratings can be edited. */
   editable?: boolean;
+  /** Term the card is for. Defaults to the term in session. */
+  termId?: string;
 }
 
 export const AFFECTIVE_TRAITS = [
