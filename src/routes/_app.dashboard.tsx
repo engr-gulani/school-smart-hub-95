@@ -27,6 +27,7 @@ import {
   STAGE_LABEL,
   currentTerm,
   type Academics,
+  publishedTerms,
 } from "@/lib/use-academics";
 
 export const Route = createFileRoute("/_app/dashboard")({
@@ -243,10 +244,15 @@ function StudentDashboard({ data, isLoading }: { data: Academics | undefined; is
   }
   const cls = (data?.classes ?? []).find((c) => c.id === student.classId);
   const attendance = attendanceFor(student.id);
-  const stage = stageFor(data, student.classId);
-  const published = stage === "published";
-  const { rows } = buildBroadsheet(data, student.classId);
+  // Show whichever term the admin has most recently published for this class,
+  // preferring the term currently in session.
+  const pubTerms = publishedTerms(data, student.classId);
+  const resultTerm = pubTerms.find((t) => t.id === data?.settings.currentTermId) ?? pubTerms[0] ?? null;
+  const stage = stageFor(data, student.classId, resultTerm?.id);
+  const published = !!resultTerm;
+  const { rows } = buildBroadsheet(data, student.classId, resultTerm?.id);
   const myRow = rows.find((r) => r.student.id === student.id);
+
   const classSubjects = (data?.subjects ?? []).filter((s) => s.classId === student.classId);
   const initials = student.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
   const attendancePct = Math.round((attendance.present / attendance.total) * 100);
@@ -297,11 +303,16 @@ function StudentDashboard({ data, isLoading }: { data: Academics | undefined; is
             <div>
               <CardTitle className="text-base">Latest results</CardTitle>
               <p className="text-muted-foreground mt-1 text-xs">
-                {published ? `Published · ${term.name}` : STAGE_LABEL[stage]}
+                {published ? `Published · ${resultTerm!.session} · ${resultTerm!.name}` : STAGE_LABEL[stage]}
               </p>
             </div>
             {published && (
-              <Link to="/report-card/$studentId" params={{ studentId: student.id }}>
+              <Link
+                to="/report-card/$studentId"
+                params={{ studentId: student.id }}
+                search={{ term: resultTerm!.id }}
+              >
+
                 <Button size="sm" variant="outline" className="gap-2">
                   <FileText className="h-4 w-4" /> Report card
                 </Button>

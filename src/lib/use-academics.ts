@@ -33,9 +33,26 @@ export function useAcademics() {
   return useQuery({
     queryKey: academicsQueryKey,
     queryFn: () => getAcademics(),
-    staleTime: 30_000,
+    // Keep every portal (students included) in step with what admins publish.
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: "always",
   });
 }
+
+/** Terms of a class whose results have been published, newest first. */
+export function publishedTerms(data: Academics | undefined, classId: string) {
+  const published = new Set(
+    (data?.approvals ?? [])
+      .filter((a) => a.classId === classId && a.stage === "published")
+      .map((a) => a.termId),
+  );
+  return (data?.terms ?? [])
+    .filter((t) => published.has(t.id))
+    .sort((a, b) => (a.session === b.session ? b.sortOrder - a.sortOrder : b.session.localeCompare(a.session)));
+}
+
 
 export function useRefreshAcademics() {
   const qc = useQueryClient();

@@ -14,6 +14,8 @@ interface Props {
   position: number;
   /** When true, comments, signatures and behavioural ratings can be edited. */
   editable?: boolean;
+  /** Term the card is for. Defaults to the term in session. */
+  termId?: string;
 }
 
 export const AFFECTIVE_TRAITS = [
@@ -118,9 +120,13 @@ export function ReportCardSheet({
   average,
   position,
   editable = false,
+  termId,
 }: Props) {
-  const SCORES = data.scores;
-  const { state, update } = useAssessment(student.id);
+  const activeTermId = termId ?? data.settings.currentTermId ?? "";
+  const term = data.terms.find((t) => t.id === activeTermId);
+  const SCORES = data.scores.filter((s) => !activeTermId || s.termId === activeTermId);
+  const { state, update } = useAssessment(`${student.id}:${activeTermId}`);
+
 
   // Names come straight from the accounts the admin creates, so reassigning a
   // class teacher or principal updates every report card automatically.
@@ -145,8 +151,9 @@ export function ReportCardSheet({
         </div>
         <div className="text-right">
           <p className="text-muted-foreground text-[10px] uppercase tracking-widest">Report card</p>
-          <p className="font-display text-sm font-semibold">{SCHOOL.session}</p>
-          <p className="text-muted-foreground text-xs">{SCHOOL.term}</p>
+          <p className="font-display text-sm font-semibold">{term?.session ?? SCHOOL.session}</p>
+          <p className="text-muted-foreground text-xs">{term?.name ?? SCHOOL.term}</p>
+
         </div>
       </header>
 
@@ -274,7 +281,7 @@ export function ReportCardSheet({
       <footer className="text-muted-foreground mt-8 flex flex-wrap items-center justify-between gap-3 border-t pt-4 text-xs">
         <div>
           <p>
-            Next term begins: <span className="text-foreground font-medium">{SCHOOL.nextTermBegins}</span>
+            Next term begins: <span className="text-foreground font-medium">{data.settings.nextTermBegins ?? SCHOOL.nextTermBegins}</span>
           </p>
           <p>
             Attendance: <span className="text-foreground font-medium">58 / 60 days</span> · Conduct:{" "}

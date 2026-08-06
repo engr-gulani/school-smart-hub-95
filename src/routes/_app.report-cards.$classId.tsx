@@ -7,6 +7,10 @@ import { buildBroadsheet, useAcademics } from "@/lib/use-academics";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_app/report-cards/$classId")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    print: typeof search['print'] === "string" ? (search['print'] as string) : undefined,
+    term: typeof search['term'] === "string" ? (search['term'] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Bulk report cards · Greenfield College Portal" },
@@ -19,14 +23,17 @@ export const Route = createFileRoute("/_app/report-cards/$classId")({
 
 function BulkReportCards() {
   const { classId } = Route.useParams();
+  const { print, term } = Route.useSearch();
   const { user } = useAuth();
   const { data, isLoading } = useAcademics();
   const printed = useRef(false);
 
-  const { subjects, rows } = useMemo(() => buildBroadsheet(data, classId), [data, classId]);
+  const termId = term ?? data?.settings.currentTermId ?? "";
+  const { subjects, rows } = useMemo(() => buildBroadsheet(data, classId, termId), [data, classId, termId]);
   const cls = data?.classes.find((c) => c.id === classId);
 
-  const autoPrint = typeof window !== "undefined" && window.location.search.includes("print=1");
+  const autoPrint = print === "1";
+
 
   useEffect(() => {
     if (!isLoading && autoPrint && !printed.current && rows.length > 0) {
@@ -85,7 +92,9 @@ function BulkReportCards() {
               average={r.average}
               position={r.position}
               editable={editable}
+              termId={termId}
             />
+
           ))}
         </div>
       )}
