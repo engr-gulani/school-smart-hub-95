@@ -243,10 +243,15 @@ function StudentDashboard({ data, isLoading }: { data: Academics | undefined; is
   }
   const cls = (data?.classes ?? []).find((c) => c.id === student.classId);
   const attendance = attendanceFor(student.id);
-  const stage = stageFor(data, student.classId);
-  const published = stage === "published";
-  const { rows } = buildBroadsheet(data, student.classId);
+  // Show whichever term the admin has most recently published for this class,
+  // preferring the term currently in session.
+  const pubTerms = publishedTerms(data, student.classId);
+  const resultTerm = pubTerms.find((t) => t.id === data?.settings.currentTermId) ?? pubTerms[0] ?? null;
+  const stage = stageFor(data, student.classId, resultTerm?.id);
+  const published = !!resultTerm;
+  const { rows } = buildBroadsheet(data, student.classId, resultTerm?.id);
   const myRow = rows.find((r) => r.student.id === student.id);
+
   const classSubjects = (data?.subjects ?? []).filter((s) => s.classId === student.classId);
   const initials = student.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
   const attendancePct = Math.round((attendance.present / attendance.total) * 100);
