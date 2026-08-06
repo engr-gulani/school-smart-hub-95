@@ -27,6 +27,7 @@ import {
   STAGE_LABEL,
   currentTerm,
   type Academics,
+  publishedTerms,
 } from "@/lib/use-academics";
 
 export const Route = createFileRoute("/_app/dashboard")({
