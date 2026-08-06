@@ -6,6 +6,9 @@ import { useAcademics, buildBroadsheet, stageFor } from "@/lib/use-academics";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_app/report-card/$studentId")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    term: typeof search['term'] === "string" ? (search['term'] as string) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Report card · Greenfield College Portal" },
@@ -18,6 +21,7 @@ export const Route = createFileRoute("/_app/report-card/$studentId")({
 
 function ReportCard() {
   const { studentId } = Route.useParams();
+  const { term } = Route.useSearch();
   const { user } = useAuth();
   const { data, isLoading } = useAcademics();
 
@@ -37,14 +41,16 @@ function ReportCard() {
     return <div className="text-muted-foreground py-16 text-center text-sm">Student record not found.</div>;
   }
 
+  const termId = term ?? data?.settings.currentTermId ?? "";
+
   // Students may only view their own report card, and only once published.
   if (user.role === "student") {
     if (data?.me.studentId !== student.id) return <Navigate to="/my-results" />;
-    if (stageFor(data, student.classId) !== "published") return <Navigate to="/my-results" />;
+    if (stageFor(data, student.classId, termId) !== "published") return <Navigate to="/my-results" />;
   }
 
   const cls = data!.classes.find((c) => c.id === student.classId);
-  const { subjects: classSubjects, rows } = buildBroadsheet(data, student.classId);
+  const { subjects: classSubjects, rows } = buildBroadsheet(data, student.classId, termId);
   const myRow = rows.find((r) => r.student.id === student.id) ?? {
     total: 0,
     average: 0,
@@ -80,6 +86,7 @@ function ReportCard() {
         average={myRow.average}
         position={myRow.position}
         editable={editable}
+        termId={termId}
       />
     </div>
   );
