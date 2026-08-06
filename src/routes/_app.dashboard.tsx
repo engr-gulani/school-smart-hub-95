@@ -303,11 +303,16 @@ function StudentDashboard({ data, isLoading }: { data: Academics | undefined; is
             <div>
               <CardTitle className="text-base">Latest results</CardTitle>
               <p className="text-muted-foreground mt-1 text-xs">
-                {published ? `Published · ${term.name}` : STAGE_LABEL[stage]}
+                {published ? `Published · ${resultTerm!.session} · ${resultTerm!.name}` : STAGE_LABEL[stage]}
               </p>
             </div>
             {published && (
-              <Link to="/report-card/$studentId" params={{ studentId: student.id }}>
+              <Link
+                to="/report-card/$studentId"
+                params={{ studentId: student.id }}
+                search={{ term: resultTerm!.id }}
+              >
+
                 <Button size="sm" variant="outline" className="gap-2">
                   <FileText className="h-4 w-4" /> Report card
                 </Button>
