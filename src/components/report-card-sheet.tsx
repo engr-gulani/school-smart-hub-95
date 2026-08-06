@@ -151,8 +151,9 @@ export function ReportCardSheet({
         </div>
         <div className="text-right">
           <p className="text-muted-foreground text-[10px] uppercase tracking-widest">Report card</p>
-          <p className="font-display text-sm font-semibold">{SCHOOL.session}</p>
-          <p className="text-muted-foreground text-xs">{SCHOOL.term}</p>
+          <p className="font-display text-sm font-semibold">{term?.session ?? SCHOOL.session}</p>
+          <p className="text-muted-foreground text-xs">{term?.name ?? SCHOOL.term}</p>
+
         </div>
       </header>
 
