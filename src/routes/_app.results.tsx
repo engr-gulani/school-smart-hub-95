@@ -253,7 +253,7 @@ function ResultsPage() {
                     <td className="py-2 pr-3 text-right tabular-nums">{r.position}</td>
                     <td className="py-2 text-right">
                       {canSeeReports && (
-                      <Link to="/report-card/$studentId" params={{ studentId: r.student.id }}>
+                      <Link to="/report-card/$studentId" params={{ studentId: r.student.id }} search={{ term: termId }}>
                         <Button size="sm" variant="ghost" className="gap-1">
                           <FileText className="h-3.5 w-3.5" />
                         </Button>
