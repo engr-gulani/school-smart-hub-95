@@ -112,7 +112,7 @@ function ResultsPage() {
           </Select>
 
           {canSeeReports && (
-          <Link to="/report-cards/$classId" params={{ classId }} search={{ print: "1" }} target="_blank">
+          <Link to="/report-cards/$classId" params={{ classId }} search={{ print: "1", term: termId }} target="_blank">
             <Button size="sm" className="gap-2">
               <Download className="h-4 w-4" /> Download all report cards (PDF)
             </Button>
