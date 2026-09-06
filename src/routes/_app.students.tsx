@@ -217,7 +217,11 @@ function StudentsPage() {
                             <Pencil className="h-3.5 w-3.5" /> Edit
                           </Button>
                         )}
-                        <Link to="/report-card/$studentId" params={{ studentId: s.id }}>
+                        <Link
+                          to="/report-card/$studentId"
+                          params={{ studentId: s.id }}
+                          search={{ term: data?.settings.currentTermId ?? undefined }}
+                        >
                           <Button size="sm" variant="ghost" className="gap-1">
                             <FileText className="h-3.5 w-3.5" /> Report
                           </Button>
