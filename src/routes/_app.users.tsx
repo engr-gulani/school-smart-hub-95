@@ -47,6 +47,7 @@ const CREATABLE_ROLES: Role[] = [
   "vp_academic",
   "class_teacher",
   "subject_teacher",
+  "accountant",
   "student",
   "school_admin",
 ];

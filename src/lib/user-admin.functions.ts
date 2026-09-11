@@ -8,6 +8,7 @@ const ROLES = [
   "vp_academic",
   "class_teacher",
   "subject_teacher",
+  "accountant",
   "student",
 ] as const;
 

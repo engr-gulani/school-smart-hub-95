@@ -5,6 +5,7 @@ export type Role =
   | "vp_academic"
   | "class_teacher"
   | "subject_teacher"
+  | "accountant"
   | "student";
 
 export interface User {
