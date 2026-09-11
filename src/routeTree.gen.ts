@@ -24,6 +24,7 @@ import { Route as AppPromotionsRouteImport } from './routes/_app.promotions'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppMyResultsRouteImport } from './routes/_app.my-results'
 import { Route as AppMyProfileRouteImport } from './routes/_app.my-profile'
+import { Route as AppFeesRouteImport } from './routes/_app.fees'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppClassesRouteImport } from './routes/_app.classes'
 import { Route as AppReportCardsClassIdRouteImport } from './routes/_app.report-cards.$classId'
@@ -103,6 +104,11 @@ const AppMyProfileRoute = AppMyProfileRouteImport.update({
   path: '/my-profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFeesRoute = AppFeesRouteImport.update({
+  id: '/fees',
+  path: '/fees',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -129,6 +135,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/classes': typeof AppClassesRoute
   '/dashboard': typeof AppDashboardRoute
+  '/fees': typeof AppFeesRoute
   '/my-profile': typeof AppMyProfileRoute
   '/my-results': typeof AppMyResultsRoute
   '/notifications': typeof AppNotificationsRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/classes': typeof AppClassesRoute
   '/dashboard': typeof AppDashboardRoute
+  '/fees': typeof AppFeesRoute
   '/my-profile': typeof AppMyProfileRoute
   '/my-results': typeof AppMyResultsRoute
   '/notifications': typeof AppNotificationsRoute
@@ -171,6 +179,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_app/classes': typeof AppClassesRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/fees': typeof AppFeesRoute
   '/_app/my-profile': typeof AppMyProfileRoute
   '/_app/my-results': typeof AppMyResultsRoute
   '/_app/notifications': typeof AppNotificationsRoute
@@ -193,6 +202,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/classes'
     | '/dashboard'
+    | '/fees'
     | '/my-profile'
     | '/my-results'
     | '/notifications'
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/classes'
     | '/dashboard'
+    | '/fees'
     | '/my-profile'
     | '/my-results'
     | '/notifications'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_app/classes'
     | '/_app/dashboard'
+    | '/_app/fees'
     | '/_app/my-profile'
     | '/_app/my-results'
     | '/_app/notifications'
@@ -363,6 +375,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMyProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/fees': {
+      id: '/_app/fees'
+      path: '/fees'
+      fullPath: '/fees'
+      preLoaderRoute: typeof AppFeesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -397,6 +416,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppClassesRoute: typeof AppClassesRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppFeesRoute: typeof AppFeesRoute
   AppMyProfileRoute: typeof AppMyProfileRoute
   AppMyResultsRoute: typeof AppMyResultsRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
@@ -416,6 +436,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppClassesRoute: AppClassesRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppFeesRoute: AppFeesRoute,
   AppMyProfileRoute: AppMyProfileRoute,
   AppMyResultsRoute: AppMyResultsRoute,
   AppNotificationsRoute: AppNotificationsRoute,
