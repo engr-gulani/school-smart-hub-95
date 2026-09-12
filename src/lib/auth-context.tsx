@@ -128,6 +128,7 @@ export const ROLE_LABEL: Record<Role, string> = {
   vp_academic: "Vice Principal (Academic)",
   class_teacher: "Class Teacher",
   subject_teacher: "Subject Teacher",
+  accountant: "Accountant",
   student: "Student",
 };
 
@@ -142,6 +143,7 @@ export type Action =
   | "principal_approve"
   | "enter_scores"
   | "view_broadsheet"
+  | "manage_fees"
   | "view_own_results";
 
 export function can(role: Role, action: Action): boolean {
@@ -163,8 +165,10 @@ export function can(role: Role, action: Action): boolean {
       return isAdmin || role === "principal";
     case "enter_scores":
       return role === "subject_teacher";
+    case "manage_fees":
+      return isAdmin || role === "accountant";
     case "view_broadsheet":
-      return role !== "subject_teacher" && role !== "student";
+      return role !== "subject_teacher" && role !== "student" && role !== "accountant";
     case "view_own_results":
       return role === "student";
   }

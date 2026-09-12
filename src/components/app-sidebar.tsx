@@ -14,6 +14,7 @@ import {
   UserCog,
   FileText,
   Bell,
+  Banknote,
 } from "lucide-react";
 import {
   Sidebar,
@@ -52,14 +53,16 @@ export function AppSidebar() {
         { title: "My Dashboard", url: "/dashboard", icon: LayoutDashboard, show: true },
         { title: "My Results", url: "/my-results", icon: FileText, show: true },
         { title: "Notifications", url: "/notifications", icon: Bell, show: true },
+        { title: "School Fees", url: "/fees", icon: Banknote, show: true },
         { title: "My Profile", url: "/my-profile", icon: UserIcon, show: true },
       ]
     : [
         { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, show: true },
-        { title: "Students", url: "/students", icon: Users, show: true },
+        { title: "Students", url: "/students", icon: Users, show: role !== "accountant" },
         { title: "Teachers", url: "/teachers", icon: GraduationCap, show: can(role, "manage_teachers") },
         { title: "Classes", url: "/classes", icon: School, show: can(role, "manage_classes") },
-        { title: "Subjects", url: "/subjects", icon: BookOpen, show: true },
+        { title: "Subjects", url: "/subjects", icon: BookOpen, show: role !== "accountant" },
+        { title: "School Fees", url: "/fees", icon: Banknote, show: true },
         { title: "Notifications", url: "/notifications", icon: Bell, show: true },
       ];
 
