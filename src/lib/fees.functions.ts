@@ -181,14 +181,29 @@ export const submitFeePayment = createServerFn({ method: "POST" })
 
     const { data: student, error: sErr } = await context.supabase
       .from("students")
-      .select("id, user_id")
+      .select("id, user_id, admission_no")
       .eq("id", data.studentId)
       .maybeSingle();
     if (sErr) throw new Error(sErr.message);
     if (!student) throw new Error("Student record not found");
-    if (student.user_id !== context.userId && !isFeeStaff(roles)) {
+
+    let isOwner = student.user_id === context.userId;
+    if (!isOwner && !student.user_id) {
+      // Student rows created by staff may not be linked to the login account yet.
+      const { data: profile } = await context.supabase
+        .from("profiles")
+        .select("admission_no")
+        .eq("id", context.userId)
+        .maybeSingle();
+      if (profile?.admission_no && profile.admission_no === student.admission_no) {
+        isOwner = true;
+        await context.supabase.from("students").update({ user_id: context.userId }).eq("id", student.id);
+      }
+    }
+    if (!isOwner && !isFeeStaff(roles)) {
       throw new Error("You can only submit payments for your own account");
     }
+
 
     const { error } = await context.supabase.from("fee_payments").insert({
       student_id: data.studentId,
