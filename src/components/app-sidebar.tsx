@@ -9,7 +9,6 @@ import {
   FileCheck2,
   Settings,
   LogOut,
-  Sparkles,
   User as UserIcon,
   UserCog,
   FileText,
@@ -32,6 +31,7 @@ import { useAuth, ROLE_LABEL, can } from "@/lib/auth-context";
 import { SCHOOL } from "@/lib/mock-data";
 import { useAcademics, currentTerm } from "@/lib/use-academics";
 import { CalendarDays } from "lucide-react";
+import schoolLogo from "@/assets/ammu-learning-academy-logo.jpg.asset.json";
 
 interface NavItem {
   title: string;
@@ -124,9 +124,11 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
-          <div className="bg-gradient-primary shadow-elegant flex h-9 w-9 items-center justify-center rounded-lg">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
+          <img
+            src={schoolLogo.url}
+            alt="Ammu Learning Academy logo"
+            className="h-9 w-9 rounded-full object-cover"
+          />
           <div className="flex flex-col leading-tight">
             <span className="font-display text-sm font-semibold text-sidebar-foreground">
               {SCHOOL.name}

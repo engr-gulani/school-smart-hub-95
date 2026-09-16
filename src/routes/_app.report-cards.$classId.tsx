@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_app/report-cards/$classId")({
   }),
   head: () => ({
     meta: [
-      { title: "Bulk report cards · Greenfield College Portal" },
+      { title: "Bulk report cards · Ammu Learning Academy" },
       { name: "description", content: "Download every student's A4 report card for a class as a single PDF." },
       { name: "robots", content: "noindex" },
     ],

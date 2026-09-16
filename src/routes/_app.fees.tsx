@@ -47,13 +47,13 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_app/fees")({
   head: () => ({
     meta: [
-      { title: "School Fees · Greenfield College Portal" },
+      { title: "School Fees · Ammu Learning Academy" },
       {
         name: "description",
         content:
           "Publish school fee account details, let students submit transaction IDs or receipts, and approve payments.",
       },
-      { property: "og:title", content: "School Fees · Greenfield College Portal" },
+      { property: "og:title", content: "School Fees · Ammu Learning Academy" },
       {
         property: "og:description",
         content: "School fee payment desk for accountants, students and class teachers.",
@@ -384,7 +384,7 @@ function FeesPage() {
                   value={accForm.accountName}
                   maxLength={120}
                   onChange={(e) => setAccForm({ ...accForm, accountName: e.target.value })}
-                  placeholder="Greenfield College"
+                  placeholder="Ammu Learning Academy"
                 />
               </div>
               <div className="space-y-1.5">

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
 import { SCHOOL } from "@/lib/mock-data";
-import { Sparkles } from "lucide-react";
+import schoolLogo from "@/assets/ammu-learning-academy-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -47,9 +47,11 @@ function AuthPage() {
     <div className="bg-gradient-hero min-h-screen">
       <div className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-10">
         <Link to="/" className="mb-6 flex items-center gap-2 text-white">
-          <div className="bg-gradient-primary shadow-elegant flex h-10 w-10 items-center justify-center rounded-lg">
-            <Sparkles className="h-5 w-5" />
-          </div>
+          <img
+            src={schoolLogo.url}
+            alt="Ammu Learning Academy logo"
+            className="h-11 w-11 rounded-full object-cover"
+          />
           <div>
             <p className="font-display text-base font-semibold leading-tight">{SCHOOL.name}</p>
             <p className="text-xs opacity-70">{SCHOOL.motto}</p>

@@ -10,7 +10,7 @@ import type { Role } from "@/lib/mock-data";
 export const Route = createFileRoute("/_app/teachers")({
   head: () => ({
     meta: [
-      { title: "Teachers · Greenfield College Portal" },
+      { title: "Teachers · Ammu Learning Academy" },
       { name: "description", content: "Staff directory with class and subject assignments." },
     ],
   }),

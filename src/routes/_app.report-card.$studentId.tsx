@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_app/report-card/$studentId")({
   }),
   head: () => ({
     meta: [
-      { title: "Report card · Greenfield College Portal" },
+      { title: "Report card · Ammu Learning Academy" },
       { name: "description", content: "Printable A4 term report card with grades, position and comments." },
       { name: "robots", content: "noindex" },
     ],

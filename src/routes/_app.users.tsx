@@ -24,13 +24,13 @@ import { createPortalUser, listPortalUsers, resetUserPassword } from "@/lib/user
 export const Route = createFileRoute("/_app/users")({
   head: () => ({
     meta: [
-      { title: "User Accounts · Greenfield College Portal" },
+      { title: "User Accounts · Ammu Learning Academy" },
       {
         name: "description",
         content:
           "Administrator tool to create and manage portal accounts for principals, vice principals, teachers and students.",
       },
-      { property: "og:title", content: "User Accounts · Greenfield College Portal" },
+      { property: "og:title", content: "User Accounts · Ammu Learning Academy" },
       {
         property: "og:description",
         content: "Create portal accounts for staff and students with the right role and access.",

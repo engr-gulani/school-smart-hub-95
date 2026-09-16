@@ -57,12 +57,12 @@ export interface Score {
 }
 
 export const SCHOOL = {
-  name: "Greenfield College",
-  motto: "Knowledge · Integrity · Excellence",
-  address: "12 Palm Avenue, Lagos, Nigeria",
-  phone: "+234 812 000 4433",
-  email: "info@greenfield.edu.ng",
-  website: "greenfield.edu.ng",
+  name: "Ammu Learning Academy",
+  motto: "Light · Knowledge · Success",
+  address: "Damaturu, Yobe State",
+  phone: "",
+  email: "",
+  website: "",
   session: "2025/2026",
   term: "First Term",
   nextTermBegins: "Jan 8, 2026",

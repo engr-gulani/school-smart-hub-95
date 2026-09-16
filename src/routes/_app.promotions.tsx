@@ -21,7 +21,7 @@ import {
 export const Route = createFileRoute("/_app/promotions")({
   head: () => ({
     meta: [
-      { title: "Promotions & session results · Greenfield College Portal" },
+      { title: "Promotions & session results · Ammu Learning Academy" },
       {
         name: "description",
         content:
