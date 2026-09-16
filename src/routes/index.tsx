@@ -7,10 +7,10 @@ import {
   FileText,
   ShieldCheck,
   BarChart3,
-  Sparkles,
   ArrowRight,
 } from "lucide-react";
 import { SCHOOL } from "@/lib/mock-data";
+import schoolLogo from "@/assets/ammu-learning-academy-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,9 +45,11 @@ function Landing() {
         <div className="mx-auto max-w-6xl px-6 py-6">
           <nav className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="bg-gradient-primary shadow-elegant flex h-10 w-10 items-center justify-center rounded-lg">
-                <Sparkles className="h-5 w-5" />
-              </div>
+              <img
+                src={schoolLogo.url}
+                alt="Ammu Learning Academy logo"
+                className="h-11 w-11 rounded-full object-cover"
+              />
               <div>
                 <p className="font-display text-base font-semibold leading-tight">{SCHOOL.name}</p>
                 <p className="text-xs opacity-70">{SCHOOL.motto}</p>
@@ -163,7 +165,7 @@ function Landing() {
       <footer className="border-t">
         <div className="text-muted-foreground mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-6 py-8 text-xs md:flex-row">
           <span>© {new Date().getFullYear()} {SCHOOL.name}. All rights reserved.</span>
-          <span>{SCHOOL.address} · {SCHOOL.phone}</span>
+          <span>{SCHOOL.address}</span>
         </div>
       </footer>
     </div>

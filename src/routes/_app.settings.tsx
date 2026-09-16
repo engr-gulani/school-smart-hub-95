@@ -7,7 +7,7 @@ import { SCHOOL, GRADE_BANDS } from "@/lib/mock-data";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_app/settings")({
-  head: () => ({ meta: [{ title: "School settings · Greenfield College Portal" }] }),
+  head: () => ({ meta: [{ title: "School settings · Ammu Learning Academy" }] }),
   component: SettingsPage,
 });
 

@@ -14,7 +14,7 @@ import { useAcademics, useRefreshAcademics } from "@/lib/use-academics";
 export const Route = createFileRoute("/_app/classes")({
   head: () => ({
     meta: [
-      { title: "Classes · Greenfield College Portal" },
+      { title: "Classes · Ammu Learning Academy" },
       { name: "description", content: "Classes, enrolment and class teacher assignments." },
     ],
   }),

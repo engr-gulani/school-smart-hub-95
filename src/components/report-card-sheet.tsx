@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles } from "lucide-react";
 import { SCHOOL, ordinal } from "@/lib/mock-data";
 import { gradeFor, scoreTotals, type Academics, type ApiStudent } from "@/lib/use-academics";
+import schoolLogo from "@/assets/ammu-learning-academy-logo.jpg.asset.json";
 
 interface Props {
   student: ApiStudent;
@@ -138,14 +138,14 @@ export function ReportCardSheet({
     <article className="bg-card text-card-foreground shadow-card mx-auto max-w-[860px] rounded-xl border p-8 print:break-after-page print:border-0 print:shadow-none">
       <header className="flex items-center justify-between gap-4 border-b pb-5">
         <div className="flex items-center gap-3">
-          <div className="bg-gradient-primary text-primary-foreground shadow-elegant flex h-14 w-14 items-center justify-center rounded-xl">
-            <Sparkles className="h-7 w-7" />
-          </div>
+          <img
+            src={schoolLogo.url}
+            alt="Ammu Learning Academy logo"
+            className="h-16 w-16 rounded-full object-cover"
+          />
           <div>
             <h2 className="font-display text-xl font-bold">{SCHOOL.name}</h2>
-            <p className="text-muted-foreground text-xs">
-              {SCHOOL.address} · {SCHOOL.phone}
-            </p>
+            <p className="text-muted-foreground text-xs">{SCHOOL.address}</p>
             <p className="text-primary text-xs italic">{SCHOOL.motto}</p>
           </div>
         </div>
