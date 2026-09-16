@@ -28,13 +28,13 @@ import {
 export const Route = createFileRoute("/_app/sessions")({
   head: () => ({
     meta: [
-      { title: "Sessions & Terms · Greenfield College Portal" },
+      { title: "Sessions & Terms · Ammu Learning Academy" },
       {
         name: "description",
         content:
           "Open or close academic terms, set the resumption date and broadcast notifications to everyone in the school.",
       },
-      { property: "og:title", content: "Sessions & Terms · Greenfield College Portal" },
+      { property: "og:title", content: "Sessions & Terms · Ammu Learning Academy" },
       {
         property: "og:description",
         content: "Manage the academic calendar and send school-wide notifications.",

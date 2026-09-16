@@ -24,7 +24,7 @@ import {
 export const Route = createFileRoute("/_app/scores")({
   head: () => ({
     meta: [
-      { title: "Score entry · Greenfield College Portal" },
+      { title: "Score entry · Ammu Learning Academy" },
       { name: "description", content: "Enter CA, assignment and exam scores with live totals and grades." },
     ],
   }),

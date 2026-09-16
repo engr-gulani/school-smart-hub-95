@@ -33,7 +33,7 @@ import {
 export const Route = createFileRoute("/_app/dashboard")({
   head: () => ({
     meta: [
-      { title: "Dashboard · Greenfield College Portal" },
+      { title: "Dashboard · Ammu Learning Academy" },
       { name: "description", content: "Role-specific overview of academic activity, results and pending tasks." },
     ],
   }),

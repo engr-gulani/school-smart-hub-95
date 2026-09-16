@@ -14,7 +14,7 @@ import { SubjectFormDialog } from "@/components/subject-form-dialog";
 export const Route = createFileRoute("/_app/subjects")({
   head: () => ({
     meta: [
-      { title: "Subjects · Greenfield College Portal" },
+      { title: "Subjects · Ammu Learning Academy" },
       { name: "description", content: "Subjects per class and the teachers assigned to teach them." },
     ],
   }),

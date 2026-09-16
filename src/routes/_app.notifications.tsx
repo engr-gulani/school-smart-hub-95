@@ -8,12 +8,12 @@ import { useAcademics, stageFor, STAGE_LABEL, currentTerm } from "@/lib/use-acad
 export const Route = createFileRoute("/_app/notifications")({
   head: () => ({
     meta: [
-      { title: "Notifications · Greenfield College Portal" },
+      { title: "Notifications · Ammu Learning Academy" },
       {
         name: "description",
         content: "Term updates, school broadcasts and result activity for staff and students.",
       },
-      { property: "og:title", content: "Notifications · Greenfield College Portal" },
+      { property: "og:title", content: "Notifications · Ammu Learning Academy" },
       { property: "og:description", content: "Term updates, school broadcasts and result activity." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },

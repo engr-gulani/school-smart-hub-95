@@ -25,7 +25,7 @@ import { useAuth } from "@/lib/auth-context";
 export const Route = createFileRoute("/_app/students")({
   head: () => ({
     meta: [
-      { title: "Students · Greenfield College Portal" },
+      { title: "Students · Ammu Learning Academy" },
       { name: "description", content: "Enrolled student records, classes and guardian contacts." },
     ],
   }),
