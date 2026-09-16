@@ -197,7 +197,9 @@ export const submitFeePayment = createServerFn({ method: "POST" })
         .maybeSingle();
       if (profile?.admission_no && profile.admission_no === student.admission_no) {
         isOwner = true;
-        await context.supabase.from("students").update({ user_id: context.userId }).eq("id", student.id);
+        // Students cannot update their own record, so link it with elevated access.
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin.from("students").update({ user_id: context.userId }).eq("id", student.id);
       }
     }
     if (!isOwner && !isFeeStaff(roles)) {
