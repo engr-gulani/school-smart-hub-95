@@ -9,104 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppUsersRouteImport } from './routes/_app.users'
-import { Route as AppTeachersRouteImport } from './routes/_app.teachers'
-import { Route as AppSubjectsRouteImport } from './routes/_app.subjects'
-import { Route as AppStudentsRouteImport } from './routes/_app.students'
-import { Route as AppSettingsRouteImport } from './routes/_app.settings'
-import { Route as AppSessionsRouteImport } from './routes/_app.sessions'
-import { Route as AppScoresRouteImport } from './routes/_app.scores'
-import { Route as AppResultsRouteImport } from './routes/_app.results'
-import { Route as AppPromotionsRouteImport } from './routes/_app.promotions'
-import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
-import { Route as AppMyResultsRouteImport } from './routes/_app.my-results'
-import { Route as AppMyProfileRouteImport } from './routes/_app.my-profile'
-import { Route as AppFeesRouteImport } from './routes/_app.fees'
-import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppClassesRouteImport } from './routes/_app.classes'
-import { Route as AppReportCardsClassIdRouteImport } from './routes/_app.report-cards.$classId'
+import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
+import { Route as AppFeesRouteImport } from './routes/_app.fees'
+import { Route as AppMyProfileRouteImport } from './routes/_app.my-profile'
+import { Route as AppMyResultsRouteImport } from './routes/_app.my-results'
+import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
+import { Route as AppPromotionsRouteImport } from './routes/_app.promotions'
+import { Route as AppResultsRouteImport } from './routes/_app.results'
+import { Route as AppScoresRouteImport } from './routes/_app.scores'
+import { Route as AppSessionsRouteImport } from './routes/_app.sessions'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppStudentsRouteImport } from './routes/_app.students'
+import { Route as AppSubjectsRouteImport } from './routes/_app.subjects'
+import { Route as AppTeachersRouteImport } from './routes/_app.teachers'
+import { Route as AppUsersRouteImport } from './routes/_app.users'
 import { Route as AppReportCardStudentIdRouteImport } from './routes/_app.report-card.$studentId'
+import { Route as AppReportCardsClassIdRouteImport } from './routes/_app.report-cards.$classId'
 
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppUsersRoute = AppUsersRouteImport.update({
-  id: '/users',
-  path: '/users',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppTeachersRoute = AppTeachersRouteImport.update({
-  id: '/teachers',
-  path: '/teachers',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSubjectsRoute = AppSubjectsRouteImport.update({
-  id: '/subjects',
-  path: '/subjects',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppStudentsRoute = AppStudentsRouteImport.update({
-  id: '/students',
-  path: '/students',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSettingsRoute = AppSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppSessionsRoute = AppSessionsRouteImport.update({
-  id: '/sessions',
-  path: '/sessions',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppScoresRoute = AppScoresRouteImport.update({
-  id: '/scores',
-  path: '/scores',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppResultsRoute = AppResultsRouteImport.update({
-  id: '/results',
-  path: '/results',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPromotionsRoute = AppPromotionsRouteImport.update({
-  id: '/promotions',
-  path: '/promotions',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppNotificationsRoute = AppNotificationsRouteImport.update({
-  id: '/notifications',
-  path: '/notifications',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMyResultsRoute = AppMyResultsRouteImport.update({
-  id: '/my-results',
-  path: '/my-results',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppMyProfileRoute = AppMyProfileRouteImport.update({
-  id: '/my-profile',
-  path: '/my-profile',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFeesRoute = AppFeesRouteImport.update({
-  id: '/fees',
-  path: '/fees',
+const AppClassesRoute = AppClassesRouteImport.update({
+  id: '/classes',
+  path: '/classes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
@@ -114,19 +54,79 @@ const AppDashboardRoute = AppDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AppRoute,
 } as any)
-const AppClassesRoute = AppClassesRouteImport.update({
-  id: '/classes',
-  path: '/classes',
+const AppFeesRoute = AppFeesRouteImport.update({
+  id: '/fees',
+  path: '/fees',
   getParentRoute: () => AppRoute,
 } as any)
-const AppReportCardsClassIdRoute = AppReportCardsClassIdRouteImport.update({
-  id: '/report-cards/$classId',
-  path: '/report-cards/$classId',
+const AppMyProfileRoute = AppMyProfileRouteImport.update({
+  id: '/my-profile',
+  path: '/my-profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMyResultsRoute = AppMyResultsRouteImport.update({
+  id: '/my-results',
+  path: '/my-results',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPromotionsRoute = AppPromotionsRouteImport.update({
+  id: '/promotions',
+  path: '/promotions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppResultsRoute = AppResultsRouteImport.update({
+  id: '/results',
+  path: '/results',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppScoresRoute = AppScoresRouteImport.update({
+  id: '/scores',
+  path: '/scores',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSessionsRoute = AppSessionsRouteImport.update({
+  id: '/sessions',
+  path: '/sessions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppStudentsRoute = AppStudentsRouteImport.update({
+  id: '/students',
+  path: '/students',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSubjectsRoute = AppSubjectsRouteImport.update({
+  id: '/subjects',
+  path: '/subjects',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTeachersRoute = AppTeachersRouteImport.update({
+  id: '/teachers',
+  path: '/teachers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUsersRoute = AppUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
   getParentRoute: () => AppRoute,
 } as any)
 const AppReportCardStudentIdRoute = AppReportCardStudentIdRouteImport.update({
   id: '/report-card/$studentId',
   path: '/report-card/$studentId',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppReportCardsClassIdRoute = AppReportCardsClassIdRouteImport.update({
+  id: '/report-cards/$classId',
+  path: '/report-cards/$classId',
   getParentRoute: () => AppRoute,
 } as any)
 
@@ -270,11 +270,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -284,102 +284,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app/users': {
-      id: '/_app/users'
-      path: '/users'
-      fullPath: '/users'
-      preLoaderRoute: typeof AppUsersRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/teachers': {
-      id: '/_app/teachers'
-      path: '/teachers'
-      fullPath: '/teachers'
-      preLoaderRoute: typeof AppTeachersRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/subjects': {
-      id: '/_app/subjects'
-      path: '/subjects'
-      fullPath: '/subjects'
-      preLoaderRoute: typeof AppSubjectsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/students': {
-      id: '/_app/students'
-      path: '/students'
-      fullPath: '/students'
-      preLoaderRoute: typeof AppStudentsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/settings': {
-      id: '/_app/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AppSettingsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/sessions': {
-      id: '/_app/sessions'
-      path: '/sessions'
-      fullPath: '/sessions'
-      preLoaderRoute: typeof AppSessionsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/scores': {
-      id: '/_app/scores'
-      path: '/scores'
-      fullPath: '/scores'
-      preLoaderRoute: typeof AppScoresRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/results': {
-      id: '/_app/results'
-      path: '/results'
-      fullPath: '/results'
-      preLoaderRoute: typeof AppResultsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/promotions': {
-      id: '/_app/promotions'
-      path: '/promotions'
-      fullPath: '/promotions'
-      preLoaderRoute: typeof AppPromotionsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/notifications': {
-      id: '/_app/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof AppNotificationsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/my-results': {
-      id: '/_app/my-results'
-      path: '/my-results'
-      fullPath: '/my-results'
-      preLoaderRoute: typeof AppMyResultsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/my-profile': {
-      id: '/_app/my-profile'
-      path: '/my-profile'
-      fullPath: '/my-profile'
-      preLoaderRoute: typeof AppMyProfileRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/fees': {
-      id: '/_app/fees'
-      path: '/fees'
-      fullPath: '/fees'
-      preLoaderRoute: typeof AppFeesRouteImport
+    '/_app/classes': {
+      id: '/_app/classes'
+      path: '/classes'
+      fullPath: '/classes'
+      preLoaderRoute: typeof AppClassesRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/dashboard': {
@@ -389,18 +305,95 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppDashboardRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/classes': {
-      id: '/_app/classes'
-      path: '/classes'
-      fullPath: '/classes'
-      preLoaderRoute: typeof AppClassesRouteImport
+    '/_app/fees': {
+      id: '/_app/fees'
+      path: '/fees'
+      fullPath: '/fees'
+      preLoaderRoute: typeof AppFeesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/report-cards/$classId': {
-      id: '/_app/report-cards/$classId'
-      path: '/report-cards/$classId'
-      fullPath: '/report-cards/$classId'
-      preLoaderRoute: typeof AppReportCardsClassIdRouteImport
+    '/_app/my-profile': {
+      id: '/_app/my-profile'
+      path: '/my-profile'
+      fullPath: '/my-profile'
+      preLoaderRoute: typeof AppMyProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/my-results': {
+      id: '/_app/my-results'
+      path: '/my-results'
+      fullPath: '/my-results'
+      preLoaderRoute: typeof AppMyResultsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/promotions': {
+      id: '/_app/promotions'
+      path: '/promotions'
+      fullPath: '/promotions'
+      preLoaderRoute: typeof AppPromotionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/results': {
+      id: '/_app/results'
+      path: '/results'
+      fullPath: '/results'
+      preLoaderRoute: typeof AppResultsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/scores': {
+      id: '/_app/scores'
+      path: '/scores'
+      fullPath: '/scores'
+      preLoaderRoute: typeof AppScoresRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/sessions': {
+      id: '/_app/sessions'
+      path: '/sessions'
+      fullPath: '/sessions'
+      preLoaderRoute: typeof AppSessionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/students': {
+      id: '/_app/students'
+      path: '/students'
+      fullPath: '/students'
+      preLoaderRoute: typeof AppStudentsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/subjects': {
+      id: '/_app/subjects'
+      path: '/subjects'
+      fullPath: '/subjects'
+      preLoaderRoute: typeof AppSubjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/teachers': {
+      id: '/_app/teachers'
+      path: '/teachers'
+      fullPath: '/teachers'
+      preLoaderRoute: typeof AppTeachersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/users': {
+      id: '/_app/users'
+      path: '/users'
+      fullPath: '/users'
+      preLoaderRoute: typeof AppUsersRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/report-card/$studentId': {
@@ -408,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/report-card/$studentId'
       fullPath: '/report-card/$studentId'
       preLoaderRoute: typeof AppReportCardStudentIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/report-cards/$classId': {
+      id: '/_app/report-cards/$classId'
+      path: '/report-cards/$classId'
+      fullPath: '/report-cards/$classId'
+      preLoaderRoute: typeof AppReportCardsClassIdRouteImport
       parentRoute: typeof AppRoute
     }
   }
