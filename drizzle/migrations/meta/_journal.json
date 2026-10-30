@@ -15,6 +15,13 @@
       "when": 1793334873410,
       "tag": "0001_share_only_published_fee_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793335020926,
+      "tag": "0002_create_attendance",
+      "breakpoints": true
     }
   ]
 }
