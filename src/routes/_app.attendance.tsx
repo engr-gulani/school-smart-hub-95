@@ -142,7 +142,7 @@ function ClassRegister({ role, userId }: { role: string; userId: string }) {
               <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-2">
                 <div>
                   <span className="text-muted-foreground mr-2">{i + 1}.</span>
-                  <span className="font-medium">{s.fullName}</span>
+                  <span className="font-medium">{s.name}</span>
                   <span className="text-xs text-muted-foreground ml-2">{s.admissionNo}</span>
                 </div>
                 <div className="flex gap-1">
