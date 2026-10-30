@@ -1,0 +1,20 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793334842270,
+      "tag": "0000_scope_selected_school_record_reads",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793334873410,
+      "tag": "0001_share_only_published_fee_accounts",
+      "breakpoints": true
+    }
+  ]
+}
