@@ -14,6 +14,7 @@ import {
   FileText,
   Bell,
   Banknote,
+  CalendarCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -52,6 +53,7 @@ export function AppSidebar() {
     ? [
         { title: "My Dashboard", url: "/dashboard", icon: LayoutDashboard, show: true },
         { title: "My Results", url: "/my-results", icon: FileText, show: true },
+        { title: "My Attendance", url: "/attendance", icon: CalendarCheck, show: true },
         { title: "Notifications", url: "/notifications", icon: Bell, show: true },
         { title: "School Fees", url: "/fees", icon: Banknote, show: true },
         { title: "My Profile", url: "/my-profile", icon: UserIcon, show: true },
@@ -62,6 +64,7 @@ export function AppSidebar() {
         { title: "Teachers", url: "/teachers", icon: GraduationCap, show: can(role, "manage_teachers") },
         { title: "Classes", url: "/classes", icon: School, show: can(role, "manage_classes") },
         { title: "Subjects", url: "/subjects", icon: BookOpen, show: role !== "accountant" },
+        { title: "Attendance", url: "/attendance", icon: CalendarCheck, show: role !== "accountant" },
         { title: "School Fees", url: "/fees", icon: Banknote, show: true },
         { title: "Notifications", url: "/notifications", icon: Bell, show: true },
       ];
